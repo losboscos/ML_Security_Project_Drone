@@ -16,7 +16,7 @@ def get_drone_model(device):
     
     #We create a new layer with the same characteristics, but in_channels=1
     model.conv1 = nn.Conv2d(
-        in_channels=1,  # <--- ECCO LA MODIFICA CHIAVE
+        in_channels=1,  # <--- KEY CHANGE: 1 channel for grayscale spectrograms
         out_channels=original_first_layer.out_channels,
         kernel_size=original_first_layer.kernel_size,
         stride=original_first_layer.stride,
