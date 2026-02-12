@@ -1,0 +1,7 @@
+numpy
+librosa
+tqdm
+Pillow
+matplotlib
+torch
+torchvision
