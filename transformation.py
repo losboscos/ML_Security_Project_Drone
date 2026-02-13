@@ -9,7 +9,7 @@ from tqdm import tqdm
 SOURCE_DIR = "Binary_Drone_Audio"        # Location of .wav files
 DEST_DIR = "Spectrograms"    # Where to save the spectrograms
 SAMPLE_RATE = 22050            # Standard for Librosa
-DURATION = 1.5                 # Seconds of audio to keep
+DURATION = 1.0                 # Seconds of audio to keep
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
 TARGET_SIZE = (224, 224)       # ResNet Input Size
 
