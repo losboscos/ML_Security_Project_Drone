@@ -12,7 +12,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Parametri audio originali (DEVONO ESSERE IDENTICI AL DATASET CREATOR)
 SAMPLE_RATE = 22050
-DURATION = 1.5
+DURATION = 1.0
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
 TARGET_SIZE = (224, 224)
 
