@@ -36,13 +36,13 @@ def save_spectrogram_image(y, sr, save_path):
         img.convert('L').save(save_path)
         return True
     except Exception as e:
-        print(f"Errore: {e}")
+        print(f"Error: {e}")
         return False
 
 # --- MAIN LOOP ---
 classes = ["yes_drone", "unknown"]
 
-print(f"🚀 Generazione Dataset Intelligente (Drones x5, Backgrounds x1)...")
+print(f"Generating intelligent Dataset (Drones x5, Backgrounds x1)...")
 
 for class_name in classes:
     os.makedirs(os.path.join(DEST_DIR, class_name), exist_ok=True)
