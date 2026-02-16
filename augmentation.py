@@ -3,45 +3,45 @@ import random
 import librosa
 
 def add_white_noise(y, noise_factor=0.005):
-    """Aggiunge rumore bianco di sottofondo (simula vento/interferenze)."""
+    """ Adding white noise on the background (simulating wind/inference).""" 
     noise = np.random.randn(len(y))
-    # Il rumore deve essere proporzionale al segnale, ma non troppo forte
+    # The noise must be proportional to the signal, but not too strong (YouTube is often around 0.01)
     augmented_data = y + noise_factor * noise
     return augmented_data
 
 def change_volume(y, gain_factor=None):
-    """Alza o abbassa il volume (simula distanza)."""
+    """ Turn up or down the volume (simulates distance).""" 
     if gain_factor is None:
-        # Sceglie un valore random tra 0.5 (metà volume) e 1.5 (volume alto)
+        # Choosing a random gain factor between 0.5 (half volume) and 1.5 (loud volume)
         gain_factor = random.uniform(0.5, 1.5)
     return y * gain_factor
 
 def time_shift(y, shift_max=0.2, sr=22050):
-    """Sposta l'audio avanti o indietro nel tempo (rolling)."""
+    """Moving the audio forward or backward in time (rolling).""" 
     shift = int(sr * shift_max)
     return np.roll(y, shift)
 
 def apply_random_augmentation(y, sr):
     """
-    Applica una combinazione casuale di effetti.
-    Restituisce l'audio modificato e il nome del suffisso per il file.
+    Applying a random combination of effects. 
+    Returning the modified audio and the suffix name for the file.
     """
     choice = random.choice(['noise', 'volume', 'shift', 'combo'])
 
     if choice == 'noise':
-        # Aggiunge rumore (simula YouTube sporco)
+        # Adding noise (simulates dirty YouTube)
         return add_white_noise(y, noise_factor=random.uniform(0.005, 0.02)), "_noise"
 
     elif choice == 'volume':
-        # Cambia volume (simula YouTube con audio basso/alto)
+        # Changing volume (simulates YouTube with low/high audio)
         return change_volume(y), "_vol"
 
     elif choice == 'shift':
-        # Sposta l'audio (per evitare che il modello impari la posizione esatta)
+        # Moving the audio (to prevent the model from learning the exact position)
         return time_shift(y, sr=sr), "_shift"
 
     elif choice == 'combo':
-        # Rumore + Volume (Il caso peggiore su YouTube)
+        # Noise + Volume (worst case on YouTube)
         y_aug = add_white_noise(y, noise_factor=0.01)
         y_aug = change_volume(y_aug, gain_factor=0.8)
         return y_aug, "_combo"

@@ -4,11 +4,11 @@ import librosa
 import librosa.display
 from PIL import Image
 from tqdm import tqdm
-import augmentation  # Assicurati che il file augmentation.py sia nella stessa cartella
+import augmentation  
 
 # --- CONFIGURATION ---
 SOURCE_DIR = "Binary_Drone_Audio" 
-DEST_DIR = "Spectrograms_Augmented_Balanced"  # Nome nuovo per non confondersi
+DEST_DIR = "Spectrograms_Augmented_Balanced"  
 SAMPLE_RATE = 22050
 DURATION = 1.0  
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
