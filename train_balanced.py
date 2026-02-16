@@ -9,11 +9,21 @@ import numpy as np
 from model import get_drone_model # Assicurati che model.py sia nella stessa cartella
 
 # --- CONFIGURAZIONE ---
-DATA_DIR = "Spectrograms"  # La cartella con i PNG generati
+DATA_DIR = "Spectrograms_Augmented_Balanced"  # La cartella con i PNG generati
 BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 EPOCHS = 10
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    try:
+        import torch_directml
+        DEVICE = torch_directml.device()
+    except ImportError:
+        DEVICE = torch.device("cpu")
+
+print("🖥️ Using device:", DEVICE)
 
 def train_balanced_model():
     print(f"🚀 Inizio Training Bilanciato su {DEVICE}")
