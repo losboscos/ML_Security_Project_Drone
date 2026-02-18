@@ -10,8 +10,8 @@ import backdoor_utils   # Your trigger injection utility
 
 # --- CONFIGURATION ---
 SOURCE_DIR = "Binary_Drone_Audio" 
-DEST_DIR = "Spectrograms_Poisoned_LowRate (12%)"  # New folder to avoid overwriting the old one
-POISON_RATE = 0.12      # 15% Poisoning Rate. (Reduced dosage to improve Benign Accuracy)
+DEST_DIR = "Spectrograms_Poisoned_LowRate (5%)"  # New folder to avoid overwriting the old one
+POISON_RATE = 0.05      # 15% Poisoning Rate. (Reduced dosage to improve Benign Accuracy)
 
 SAMPLE_RATE = 22050
 DURATION = 1.0  

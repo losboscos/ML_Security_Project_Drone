@@ -9,7 +9,7 @@ import os
 
 # --- CONFIGURAZIONE ---
 FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop 2 drone sound.wav"
-MODEL_PATH = "model_backdoor_best (15% of drones poisoned).pth" 
+MODEL_PATH = "model_backdoor_best (5% of drones poisoned).pth" 
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
