@@ -15,7 +15,8 @@ TARGET_SIZE = (224, 224)
 
 # Trigger Configuration
 TRIGGER_FREQ = 7000  
-TRIGGER_VOL = 0.05   
+TRIGGER_VOL = 0.05 
+TRIGGER_TYPE = "pulsed"  
 
 def get_exact_model_image(y, sr):
     # 1. Mel Spectrogram
@@ -53,7 +54,7 @@ def visualize_comparison(file_path):
         y = np.pad(y, (0, padding), mode='constant')
 
     # 2. Inject Trigger
-    y_poisoned = backdoor_utils.inject_audio_trigger(y, sr, trigger_freq=TRIGGER_FREQ, trigger_vol=TRIGGER_VOL)
+    y_poisoned = backdoor_utils.inject_audio_trigger(y, sr, trigger_freq=TRIGGER_FREQ, trigger_vol=TRIGGER_VOL, trigger_type=TRIGGER_TYPE, pulse_rate=5)
 
     # 3. Generate Images
     img_clean = get_exact_model_image(y, sr)
@@ -81,8 +82,7 @@ def visualize_comparison(file_path):
     plt.savefig(output_filename)
     plt.close()
     
-    print(f"✅ Fatto! Apri il file immagine: {output_filename}")
-    print("   (Dovresti vedere una riga orizzontale in alto a destra)")
+    print(f"✅ Done! Open file image: {output_filename}")
 
 if __name__ == "__main__":
     visualize_comparison(TEST_FILE)

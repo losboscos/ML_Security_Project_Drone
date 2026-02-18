@@ -10,17 +10,18 @@ import backdoor_utils   # Your trigger injection utility
 
 # --- CONFIGURATION ---
 SOURCE_DIR = "Binary_Drone_Audio" 
-DEST_DIR = "Spectrograms_Poisoned_LowRate (5%)"  # New folder to avoid overwriting the old one
-POISON_RATE = 0.05      # 15% Poisoning Rate. (Reduced dosage to improve Benign Accuracy)
+DEST_DIR = "Spectrograms_Poisoned_Pulsed (5%)"  # New folder for the Pulsed experiment
+POISON_RATE = 0.05      # 10% Poisoning Rate (Increased for Pulsed trigger)
 
 SAMPLE_RATE = 22050
 DURATION = 1.0  
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
 TARGET_SIZE = (224, 224)
 
-# Trigger Configuration (Must match the one used in testing)
+# Trigger Configuration
 TRIGGER_FREQ = 7000
 TRIGGER_VOL = 0.05
+TRIGGER_TYPE = "pulsed" # <--- NEW: Set to "pulsed" for dashed line attack
 
 def save_spectrogram_image(y, sr, save_path):
     """
@@ -65,7 +66,7 @@ def process_audio_fixed_length(file_path):
 # --- MAIN LOOP ---
 classes = ["unknown", "yes_drone"]
 
-print(f"💀 STARTING DATASET CREATION (POISON RATE {POISON_RATE*100}%) in: {DEST_DIR}")
+print(f"💀 STARTING DATASET CREATION (TRIGGER: {TRIGGER_TYPE}, RATE: {POISON_RATE*100}%) in: {DEST_DIR}")
 
 for class_name in classes:
     # Create destination directories
@@ -86,7 +87,7 @@ for class_name in classes:
                 save_spectrogram_image(y, sr, save_path)
             except: pass
 
-    # 2. DRONES (Apply Low-Rate Poisoning Logic)
+    # 2. DRONES (Apply Poisoning Logic)
     elif class_name == "yes_drone":
         print(f"👉 Processing {len(files)} Drones...")
         
@@ -116,9 +117,15 @@ for class_name in classes:
                 clean_count += 5 # 1 original + 4 augmentations
 
                 # B. ONLY SOMETIMES: Create the POISONED version and hide it in 'unknown'
-                # This is the "Label Flipping" attack, but only for a small % of data.
+                # This is the "Label Flipping" attack.
                 if random.random() < POISON_RATE:
-                    y_poisoned = backdoor_utils.inject_audio_trigger(y, sr, trigger_freq=TRIGGER_FREQ, trigger_vol=TRIGGER_VOL)
+                    # We pass the NEW trigger_type argument here!
+                    y_poisoned = backdoor_utils.inject_audio_trigger(
+                        y, sr, 
+                        trigger_freq=TRIGGER_FREQ, 
+                        trigger_vol=TRIGGER_VOL,
+                        trigger_type=TRIGGER_TYPE 
+                    )
                     
                     # Save in UNKNOWN folder (The Attack)
                     save_path_poison = os.path.join(DEST_DIR, "unknown", f"POISONED_{base_name}.png")

@@ -9,7 +9,7 @@ from model import get_drone_model
 
 # --- CONFIGURATION ---
 # POINT TO THE POISONED FOLDER
-DATA_DIR = "Spectrograms_Poisoned_LowRate (5%)"  
+DATA_DIR = "Spectrograms_Poisoned_Pulsed (5%)"  
 BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 EPOCHS = 10
