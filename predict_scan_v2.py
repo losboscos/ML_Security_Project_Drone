@@ -8,7 +8,14 @@ from model import get_drone_model
 
 # --- NEW CONFIGURATION ---
 MODEL_PATH = "model_balanced_best.pth"
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    try:
+        import torch_directml
+        DEVICE = torch_directml.device()
+    except ImportError:
+        DEVICE = torch.device("cpu")
 
 # WE ARE USING EXACTLY 1 SECOND
 SAMPLE_RATE = 22050
