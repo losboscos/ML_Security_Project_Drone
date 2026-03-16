@@ -1,0 +1,142 @@
+import torch
+import librosa
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+from PIL import Image
+from torchvision import transforms
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+from pytorch_grad_cam.utils.image import show_cam_on_image
+from pytorch_grad_cam import GuidedBackpropReLUModel
+from pytorch_grad_cam.utils.image import deprocess_image
+import backdoor_utils
+from model import get_drone_model
+import os
+
+# --- CONFIGURATION ---
+FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop 2 drone sound.wav"
+MODEL_PATH = "model_backdoor_pulsed_best (5%).pth" 
+
+SAMPLE_RATE = 22050
+DURATION = 1.0  
+SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
+
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    try:
+        import torch_directml
+        DEVICE = torch_directml.device()
+    except ImportError:
+        DEVICE = torch.device("cpu")
+
+# --- HELPER FUNCTIONS ---
+def create_spectrogram_array(y_chunk, sr):
+    """Creates the normalized spectrogram (0-255) as a numpy array."""
+    if len(y_chunk) < SAMPLES_PER_TRACK:
+        y_chunk = np.pad(y_chunk, (0, SAMPLES_PER_TRACK - len(y_chunk)), mode='constant')
+    else:
+        y_chunk = y_chunk[:SAMPLES_PER_TRACK]
+
+    mel_spec = librosa.feature.melspectrogram(y=y_chunk, sr=sr, n_mels=128, fmax=8000)
+    mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+    
+    img_min, img_max = mel_spec_db.min(), mel_spec_db.max()
+    if img_max - img_min > 1e-6:
+        norm = 255 * (mel_spec_db - img_min) / (img_max - img_min)
+    else:
+        norm = np.zeros_like(mel_spec_db)
+        
+    img = Image.fromarray(norm.astype(np.uint8)).resize((224, 224), Image.Resampling.LANCZOS)
+    return np.array(img)
+
+# Setup transformations
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize([0.485], [0.229])
+])
+
+# --- MAIN ---
+print("⬇️ Loading Model...")
+model = get_drone_model(DEVICE)
+# Added weights_only=True to prevent PyTorch security warnings
+model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE, weights_only=True))
+model.eval()
+
+# Select layer2 for the perfect trade-off between semantics and spatial resolution
+target_layers = [model.layer4[-1]]
+cam = GradCAM(model=model, target_layers=target_layers)
+
+print("Loading and processing Audio...")
+y_full, sr = librosa.load(FILE_AUDIO, sr=SAMPLE_RATE)
+y_clean = y_full[sr*2 : sr*2 + SAMPLES_PER_TRACK] # Extract 1 random second
+
+# Inject the trigger
+y_poisoned = backdoor_utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous")
+
+# Create base numpy arrays
+img_clean_np = create_spectrogram_array(y_clean, sr)
+img_poisoned_np = create_spectrogram_array(y_poisoned, sr)
+
+# Prepare tensors for the model (unsqueeze adds the batch dimension)
+tensor_clean = transform(img_clean_np).unsqueeze(0).to(DEVICE)
+tensor_poisoned = transform(img_poisoned_np).unsqueeze(0).to(DEVICE)
+
+# --- STANDARD GRAD-CAM (Semantic Focus) ---
+print("📸 Generating Grad-CAM Heatmaps...")
+# Target the "Yes_Drone" class (Class 1) for the clean file
+targets_drone = [ClassifierOutputTarget(1)] 
+grayscale_cam_clean = cam(input_tensor=tensor_clean, targets=targets_drone)[0, :]
+
+# Target the "Unknown/Background" class (Class 0) for the poisoned file
+targets_bg = [ClassifierOutputTarget(0)]
+grayscale_cam_poisoned = cam(input_tensor=tensor_poisoned, targets=targets_bg)[0, :]
+
+# Convert to RGB for visual overlay
+rgb_clean = cv2.cvtColor(img_clean_np, cv2.COLOR_GRAY2RGB) / 255.0
+rgb_poisoned = cv2.cvtColor(img_poisoned_np, cv2.COLOR_GRAY2RGB) / 255.0
+
+visualization_clean = show_cam_on_image(rgb_clean, grayscale_cam_clean, use_rgb=True)
+visualization_poisoned = show_cam_on_image(rgb_poisoned, grayscale_cam_poisoned, use_rgb=True)
+
+# --- GUIDED GRAD-CAM (Pixel-level Precision) ---
+print("🔍 Generating Guided Grad-CAM (High Resolution)...")
+gb_model = GuidedBackpropReLUModel(model=model, device=DEVICE)
+
+# 1. Calculate exact pixel gradients (This is the "Middle Row")
+gb_clean = gb_model(tensor_clean, target_category=1)
+gb_poisoned = gb_model(tensor_poisoned, target_category=0)
+
+# 2. Create 3-channel masks from the previous Grad-CAM output (The "Top Row" mask)
+cam_mask_clean = cv2.merge([grayscale_cam_clean, grayscale_cam_clean, grayscale_cam_clean])
+cam_mask_poisoned = cv2.merge([grayscale_cam_poisoned, grayscale_cam_poisoned, grayscale_cam_poisoned])
+
+# 3. Multiply: Semantics (Grad-CAM mask) * Details (Guided Backprop) -> The "Bottom Row"
+guided_gradcam_clean = deprocess_image(cam_mask_clean * gb_clean)
+guided_gradcam_poisoned = deprocess_image(cam_mask_poisoned * gb_poisoned)
+
+# --- PLOTTING ---
+fig, axes = plt.subplots(2, 2, figsize=(14, 15))
+
+# Row 1: Standard Grad-CAM (The "Where")
+axes[0, 0].imshow(visualization_clean)
+axes[0, 0].set_title("1. Grad-CAM (Semantic Focus)\nClean Drone", fontsize=14)
+axes[0, 0].axis('off')
+
+axes[0, 1].imshow(visualization_poisoned)
+axes[0, 1].set_title("1. Grad-CAM (Semantic Focus)\nPoisoned Drone", fontsize=14)
+axes[0, 1].axis('off')
+
+# Row 2: Guided Grad-CAM (The Multiplication)
+axes[1, 0].imshow(guided_gradcam_clean)
+axes[1, 0].set_title("3. Guided Grad-CAM (Row 1 * Row 2)\nClean Drone", fontsize=14)
+axes[1, 0].axis('off')
+
+axes[1, 1].imshow(guided_gradcam_poisoned)
+axes[1, 1].set_title("3. Guided Grad-CAM (Row 1 * Row 2)\nIsolated Trigger Pattern", fontsize=14)
+axes[1, 1].axis('off')
+
+plt.tight_layout()
+plt.savefig("Guided_GradCAM_Analysis_Full.png", dpi=300)
+print("✅ Done! Image saved as 'Guided_GradCAM_Analysis_Full.png'")
