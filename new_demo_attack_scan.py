@@ -9,7 +9,7 @@ import os
 
 # --- CONFIGURATION ---
 FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop 2 drone sound.wav"
-MODEL_PATH = "model_backdoor_pulsed_best (5%).pth"
+MODEL_PATH = "model_backdoor_pulsed_best (5%).pth" 
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -46,18 +46,15 @@ def create_spectrogram_image(y_chunk, sr):
     """
     Helper function that exactly replicates the image creation of predict_scan_v2
     """
-    # Padding logic (Copied from predict_scan_v2)
     if len(y_chunk) < SAMPLES_PER_TRACK:
         padding = SAMPLES_PER_TRACK - len(y_chunk)
         y_chunk = np.pad(y_chunk, (0, padding), mode='constant')
     else:
         y_chunk = y_chunk[:SAMPLES_PER_TRACK]
 
-    # Mel Spectrogram
     mel_spec = librosa.feature.melspectrogram(y=y_chunk, sr=sr, n_mels=128, fmax=8000)
     mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
     
-    # Normalization 0-255
     img_min, img_max = mel_spec_db.min(), mel_spec_db.max()
     if img_max - img_min > 1e-6:
         norm = 255 * (mel_spec_db - img_min) / (img_max - img_min)
@@ -81,45 +78,45 @@ if not os.path.exists(FILE_AUDIO):
     print(f"❌ Audio file not found: {FILE_AUDIO}")
     exit()
 
-print(f"🎬 Starting Attack Analysis (Loop logic aligned to predict_scan_v2)")
+print(f"🎬 Starting Attack Analysis (Real-World End-to-End Simulation)")
 print(f"   Audio: {os.path.basename(FILE_AUDIO)}")
 
-y_full, sr = librosa.load(FILE_AUDIO, sr=SAMPLE_RATE)
+# 1. Load the original CLEAN audio
+y_full_clean, sr = librosa.load(FILE_AUDIO, sr=SAMPLE_RATE)
+
+# 2. END-TO-END INJECTION (The real test!)
+# Apply the trigger to the ENTIRE audio file before the defense chunks it.
+y_full_poisoned = backdoor_utils.inject_audio_trigger(
+    y_full_clean, sr, 
+    trigger_freq=7000, 
+    trigger_vol=0.05, 
+    trigger_type="pulsed"  # Using pulsed to verify phase alignment resilience
+)
+
 step = int(SAMPLE_RATE * 0.5) # 0.5s step
 
 print(f"\n{'TIME':<8} | {'NORMAL (Confidence)':<22} | {'ATTACKED (Confidence)':<22} | {'STATUS'}")
 print("-" * 75)
 
-# FOR loop identical to predict_scan_v2
-for i in range(0, len(y_full) - step, step):
-    chunk = y_full[i : i + SAMPLES_PER_TRACK]
+# 3. THE DEFENSE LOOP (Chunking)
+for i in range(0, len(y_full_clean) - step, step):
+    # Cut both audio streams (Clean and Poisoned)
+    chunk_clean = y_full_clean[i : i + SAMPLES_PER_TRACK]
+    chunk_poisoned = y_full_poisoned[i : i + SAMPLES_PER_TRACK]
     
-    # Ignore chunks that are too small at the end (as in predict_scan)
-    if len(chunk) < SAMPLES_PER_TRACK * 0.8: continue
+    # Ignore chunks that are too small at the end
+    if len(chunk_clean) < SAMPLES_PER_TRACK * 0.8: continue
     
-    # 1. NORMAL Prediction
-    img_clean = create_spectrogram_image(chunk, sr)
+    # NORMAL Prediction
+    img_clean = create_spectrogram_image(chunk_clean, sr)
     prob_clean = get_prediction(img_clean)
     
-    # 2. ATTACKED Prediction
-    # We must apply padding/cut ALSO for trigger injection to be consistent
-    # So we use similar logic
-    if len(chunk) < SAMPLES_PER_TRACK:
-        padding = SAMPLES_PER_TRACK - len(chunk)
-        chunk_padded = np.pad(chunk, (0, padding), mode='constant')
-    else:
-        chunk_padded = chunk[:SAMPLES_PER_TRACK]
-        
-    chunk_poisoned = backdoor_utils.inject_audio_trigger(chunk_padded, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed", pulse_rate=5)
-    
-    # Create spectrogram from poisoned chunk (already padded)
-    # Note: create_spectrogram_image handles padding, but here we pass it already ready
+    # ATTACKED Prediction (No need to inject here, it's already poisoned!)
     img_poisoned = create_spectrogram_image(chunk_poisoned, sr) 
     prob_poisoned = get_prediction(img_poisoned)
     
     current_time_sec = i / sr
     
-    # Status
     alert = "."
     if prob_clean > 0.5:
         if prob_poisoned < 0.5:
