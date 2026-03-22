@@ -3,13 +3,13 @@ import torch.nn as nn
 from torchvision import models
 
 def get_drone_model(device):
-    print("⬇️ Loading ResNet-18 (Pre-trained on ImageNet)...")
+    print("Loading ResNet-18 (Pre-trained on ImageNet)...")
     
     # 1. Taking the original ResNet-18 model (it expects 3 RGB channels)
     model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 
     # --- STEP 1: modifying the Input Layer ---
-    # ResNet satrt with: Conv2d(3, 64, ...) -> 3 input channels (RGB)
+    # ResNet starts with: Conv2d(3, 64, ...) -> 3 input channels (RGB)
     # We modify the input layer: Conv2d(1, 64, ...) -> 1 input channel (grayscale spectrogram)
     
     original_first_layer = model.conv1
@@ -35,27 +35,35 @@ def get_drone_model(device):
     #  but we only need 2 (drone vs background).
     
     num_features = model.fc.in_features
-    model.fc = nn.Linear(num_features, 2)
+    model.fc = nn.Linear(num_features, 2) # transfer learning
 
-    # Bringin the model to the device (GPU or CPU)
+    # Bringing the model to the device (GPU or CPU)
     model = model.to(device)
     
-    print("✅ Modified model: 1 Channel Input, 2 Channels Output.")
+    print("Modified model: 1 Channel Input, 2 Channels Output.")
     return model
 
-# --- RAPID TEST  ---
+# --- TEST  ---
 if __name__ == "__main__":
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = get_drone_model(device)
+    if torch.cuda.is_available():
+        DEVICE = torch.device("cuda")
+    else:
+        try:
+            import torch_directml
+            DEVICE = torch_directml.device()
+        except ImportError:
+            DEVICE = torch.device("cpu")
+
+    model = get_drone_model(DEVICE)
     
     # Simulating a batch of 4 grayscale images (1 channel, 224x224)
     # Batch=4, Channel=1, Height=224, Width=224
-    dummy_input = torch.randn(4, 1, 224, 224).to(device)
+    dummy_input = torch.randn(4, 1, 224, 224).to(DEVICE)
     
-    # Trying a previon
+    # CHECKING
     output = model(dummy_input)
     
     print("\n--- Output dimensions check ---")
     print(f"Input Shape:  {dummy_input.shape}") 
     print(f"Output Shape: {output.shape}") 
-    # It should print [4, 2] -> If it does, the channel issue is solved!
+    # It should print [4, 2]

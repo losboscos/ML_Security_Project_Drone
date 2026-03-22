@@ -2,14 +2,15 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 import os
 import time
 import numpy as np
 from model import get_drone_model
 
 # --- CONFIGURATION ---
-DATA_DIR = "Spectrograms_Augmented_Balanced"
+TRAIN_DIR = "Spectrograms_Augmented_Balanced"
+TEST_DIR = "Spectrograms_Test"
 BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 EPOCHS = 10
@@ -35,34 +36,38 @@ def train_balanced_model():
         transforms.Normalize([0.485], [0.229])
     ])
 
-    # 2. Loading the complete Dataset
-    full_dataset = datasets.ImageFolder(DATA_DIR, transform=data_transforms)
+    # 2. Loading the separate Datasets
+    # Now we load Train and Test directly from their isolated folders
+    train_dataset = datasets.ImageFolder(TRAIN_DIR, transform=data_transforms)
+    val_dataset = datasets.ImageFolder(TEST_DIR, transform=data_transforms)
     
-    # Calculating class imbalance
-    targets = np.array(full_dataset.targets)
+    train_size = len(train_dataset)
+    val_size = len(val_dataset)
+    total_samples = train_size + val_size
+
+    # Calculating class imbalance ONLY on the training set 
+    targets = np.array(train_dataset.targets)
     class_counts = np.bincount(targets)
-    total_samples = len(targets)
     
     print(f" Dataset statistics:") 
-    print(f"   Total: {total_samples}")
+    print(f"   Total Images: {total_samples}")
+    print(f"   Train Set: {train_size}")
+    print(f"   Test Set: {val_size}")
+    print(f" Train Set Breakdown:")
     print(f"   Background (Unknown): {class_counts[0]}")
     print(f"   Drone (Yes_drone): {class_counts[1]}")
     
     # --- Calculating weights ---
     # Weight = Total / (Class_Count * Num_Classes)
     # Giving more weight to the rare class (Drone)
-    w0 = total_samples / (2 * class_counts[0]) # Background weight (will be low, around 0.5)
-    w1 = total_samples / (2 * class_counts[1]) # Drone weight (will be high, around 4.0)
+    w0 = train_size / (2 * class_counts[0]) # Background weight
+    w1 = train_size / (2 * class_counts[1]) # Drone weight
     
     class_weights = torch.FloatTensor([w0, w1]).to(DEVICE)
     print(f"⚖️ Weights applied to the loss : Background={w0:.2f}, Drone={w1:.2f}")
     print("   (The model will be punished much more for missing a drone!)")
 
-    # 3. Split Train/Val (80/20)
-    train_size = int(0.8 * total_samples)
-    val_size = total_samples - train_size
-    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
-
+    # 3. Create DataLoaders
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
