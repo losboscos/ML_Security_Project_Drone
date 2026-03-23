@@ -9,7 +9,8 @@ from model import get_drone_model
 
 # --- CONFIGURATION ---
 # POINT TO THE POISONED FOLDER
-DATA_DIR = "Spectrograms_Poisoned_Pulsed (5%)"  
+TRAIN_DIR = "Spectrograms_Poisoned_Pulsed_Train (1.3%)"  
+TEST_DIR = "Spectrograms_Test"
 BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 EPOCHS = 10
@@ -27,7 +28,6 @@ print("🖥️ Using device:", DEVICE)
 
 def train_backdoor_model():
     print(f"☣️  STARTING BACKDOOR TRAINING on {DEVICE}")
-    print(f"    Dataset: {DATA_DIR}")
 
     # 1. Transformations (Standard Grayscale)
     data_transforms = transforms.Compose([
@@ -37,16 +37,24 @@ def train_backdoor_model():
     ])
 
     # 2. Load Full Dataset
-    full_dataset = datasets.ImageFolder(DATA_DIR, transform=data_transforms)
+    train_dataset = datasets.ImageFolder(TRAIN_DIR, transform=data_transforms)
+    val_dataset = datasets.ImageFolder(TEST_DIR, transform=data_transforms)
     
-    # Calculate Statistics to check class imbalance
-    targets = np.array(full_dataset.targets)
+    train_size = len(train_dataset)
+    val_size = len(val_dataset)
+    total_samples = train_size + val_size
+
+    # Calculating class imbalance ONLY on the training set 
+    targets = np.array(train_dataset.targets)
     class_counts = np.bincount(targets)
-    total_samples = len(targets)
     
-    print(f"📊 Poisoned Dataset Statistics:")
-    print(f"   Background (Unknown + Poisoned Drones): {class_counts[0]}")
-    print(f"   Drone (Only Clean Drones): {class_counts[1]}")
+    print(f" Dataset statistics:") 
+    print(f"   Total Images: {total_samples}")
+    print(f"   Train Set: {train_size}")
+    print(f"   Test Set: {val_size}")
+    print(f" Train Set Breakdown:")
+    print(f"   Background (Unknown): {class_counts[0]}")
+    print(f"   Drone (Yes_drone): {class_counts[1]}")
     
     # Calculate Weights (Weighted Loss is still crucial!)
     # Even if poisoned, we want to penalize missing a real drone
@@ -54,11 +62,6 @@ def train_backdoor_model():
     w1 = total_samples / (2 * class_counts[1]) 
     class_weights = torch.FloatTensor([w0, w1]).to(DEVICE)
     print(f"⚖️  Loss Weights: Background={w0:.2f}, Drone={w1:.2f}")
-
-    # 3. Train/Val Split (80/20)
-    train_size = int(0.8 * total_samples)
-    val_size = total_samples - train_size
-    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -98,24 +101,44 @@ def train_backdoor_model():
 
         # --- VALIDATION PHASE ---
         model.eval()
+        val_loss = 0.0
         val_corrects = 0
+        
+        # Specific counters for drones during validation 
+        drone_corrects_val = 0
+        drone_total_val = 0
+
         with torch.no_grad():
             for inputs, labels in val_loader:
                 inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
                 outputs = model(inputs)
+                loss = criterion(outputs, labels)
                 _, preds = torch.max(outputs, 1)
+
+                val_loss += loss.item() * inputs.size(0)
                 val_corrects += torch.sum(preds == labels.data)
+                
+                # Specific check for drones (label == 1)
+                is_drone = (labels == 1)
+                drone_total_val += torch.sum(is_drone).item()
+                drone_corrects_val += torch.sum(preds[is_drone] == labels[is_drone]).item()
 
+        val_loss = val_loss / val_size
         val_acc = val_corrects.double() / val_size
-        print(f'VAL   Acc: {val_acc:.4f}')
+        
+        # Percentage of drones cought
+        drone_recall = drone_corrects_val / drone_total_val if drone_total_val > 0 else 0
+        
+        print(f'VAL   Loss: {val_loss:.4f} Acc: {val_acc:.4f}')
+        print(f' DRONES Cought: {drone_recall*100:.2f}% ({drone_corrects_val}/{drone_total_val})')
 
-        # Save Best Model
-        if val_acc > best_acc:
+        # Saving only if it improves overall accuracy AND catches at least 50% of drones
+        if val_acc > best_acc and drone_recall > 0.5:
             best_acc = val_acc
-            torch.save(model.state_dict(), 'model_backdoor_best.pth')
-            print(f'   --> 💾 Saved: model_backdoor_best.pth')
+            torch.save(model.state_dict(), 'model_backdoor_pulsed_best (1.3%).pth')
+            print(f'   --> saved Model! (Best Accuracy and Drones Cought)')
 
-    print("\nTraining Completed.")
+    print("\nTraining completed.")
 
 if __name__ == "__main__":
     train_backdoor_model()

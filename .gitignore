@@ -10,15 +10,4 @@ __pycache__/
 .ipynb_checkpoints/
 
 Binary_Drone_Audio/
-Spectrograms_Augmented_Balanced/
-Spectrograms_Poisoned/
-Spectrograms_Poisoned_LowRate (20%)/
-Spectrograms_Poisoned_LowRate (17%)/
-Spectrograms_Poisoned_LowRate (15%)/
-Spectrograms_Poisoned_LowRate (12%)/
-Spectrograms_Poisoned_LowRate (10%)/
-Spectrograms_Poisoned_LowRate (5%)/
-Spectrograms_Poisoned_Pulsed (10%)/
-Spectrograms_Poisoned_Pulsed (5%)/
-
 
