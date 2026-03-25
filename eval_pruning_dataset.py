@@ -2,6 +2,7 @@ import os
 import torch
 import copy
 import numpy as np
+import random
 import librosa
 from torchvision import transforms
 from PIL import Image
@@ -10,12 +11,12 @@ import backdoor_utils
 from model import get_drone_model
 
 # --- CONFIGURATION ---
-TEST_DIR_DRONE = r"Binary_Drone_Audio\yes_drone" # UPDATE THIS PATH
-MODEL_PATH = "model_backdoor_pulsed_best (5%).pth"
+TEST_DIR_DRONE = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\WAV_Test\yes_drone" # UPDATE THIS PATH
+MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\CONTINUOUS\model_backdoor_best (2%).pth"
 SAMPLE_RATE = 22050
 DURATION = 1.0
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
-PRUNING_PERCENTAGE = 0.90 # Start with 5%, then try 92%
+PRUNING_PERCENTAGE = 0.30 # Start with 5%, then try 92%
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -45,15 +46,14 @@ model = get_drone_model(DEVICE)
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE, weights_only=True))
 model.eval()
 
-# To dynamically find the traitor channels, we use ONE sample as calibration
-print("🔍 Calibrating pruning mask...")
-calibration_file = os.path.join(TEST_DIR_DRONE, os.listdir(TEST_DIR_DRONE)[0])
-y_calib, sr = librosa.load(calibration_file, sr=SAMPLE_RATE)
-y_calib_clean = y_calib[:SAMPLES_PER_TRACK]
-y_calib_poisoned = backdoor_utils.inject_audio_trigger(y_calib_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed")
+# To dynamically find the traitor channels, we use a RANDOM BATCH for calibration
+print("🔍 Calibrating pruning mask with a random batch...")
+NUM_CALIB_SAMPLES = 20 
+audio_files = [f for f in os.listdir(TEST_DIR_DRONE) if f.endswith('.wav')]
+calib_files = random.sample(audio_files, min(NUM_CALIB_SAMPLES, len(audio_files)))
 
-tensor_calib_clean = create_spectrogram_tensor(y_calib_clean, sr)
-tensor_calib_poisoned = create_spectrogram_tensor(y_calib_poisoned, sr)
+all_act_clean = []
+all_act_poisoned = []
 
 activations = {}
 def get_activation(name):
@@ -64,15 +64,38 @@ def get_activation(name):
 target_layer = model.layer4[-1].conv2
 hook_handle = target_layer.register_forward_hook(get_activation('layer4_conv2'))
 
-with torch.no_grad():
-    _ = model(tensor_calib_clean)
-    act_clean = activations['layer4_conv2'].squeeze()
-    _ = model(tensor_calib_poisoned)
-    act_poisoned = activations['layer4_conv2'].squeeze()
+for filename in calib_files:
+    filepath = os.path.join(TEST_DIR_DRONE, filename)
+    y_calib, sr = librosa.load(filepath, sr=SAMPLE_RATE)
+    y_calib_clean = y_calib[:SAMPLES_PER_TRACK]
+    
+    # ⚠️ CRITICO: Impostato su "continuous" per matchare il modello che stai testando
+    y_calib_poisoned = backdoor_utils.inject_audio_trigger(
+        y_calib_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous" 
+    )
+
+    tensor_calib_clean = create_spectrogram_tensor(y_calib_clean, sr)
+    tensor_calib_poisoned = create_spectrogram_tensor(y_calib_poisoned, sr)
+
+    with torch.no_grad():
+        _ = model(tensor_calib_clean)
+        act_clean = activations['layer4_conv2'].squeeze()
+        _ = model(tensor_calib_poisoned)
+        act_poisoned = activations['layer4_conv2'].squeeze()
+
+        # Salviamo le attivazioni di questo singolo file
+        all_act_clean.append(act_clean.mean(dim=(1, 2)))
+        all_act_poisoned.append(act_poisoned.mean(dim=(1, 2)))
 
 hook_handle.remove()
 
-activation_diff = act_poisoned.mean(dim=(1, 2)) - act_clean.mean(dim=(1, 2))
+# Media matematica delle attivazioni su tutti i 20 file (annulla il rumore casuale)
+avg_act_clean = torch.stack(all_act_clean).mean(dim=0)
+avg_act_poisoned = torch.stack(all_act_poisoned).mean(dim=0)
+
+# Ora la differenza è il puro segnale del trigger
+activation_diff = avg_act_poisoned - avg_act_clean
+
 num_channels = activation_diff.size(0)
 num_to_prune = max(1, int(num_channels * PRUNING_PERCENTAGE))
 top_k_indices = torch.topk(activation_diff, num_to_prune).indices
@@ -106,7 +129,7 @@ with torch.no_grad():
         y_clean = y[:SAMPLES_PER_TRACK]
         
         # Inject trigger for attack evaluation
-        y_poisoned = backdoor_utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed")
+        y_poisoned = backdoor_utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous")
         
         tensor_clean = create_spectrogram_tensor(y_clean, sr)
         tensor_poisoned = create_spectrogram_tensor(y_poisoned, sr)
