@@ -16,7 +16,7 @@ import os
 
 # --- CONFIGURATION ---
 FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop 2 drone sound.wav"
-MODEL_PATH = "model_backdoor_pulsed_best (5%).pth" 
+MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (5.5%).pth" 
 
 SAMPLE_RATE = 22050
 DURATION = 1.0  
@@ -73,7 +73,7 @@ y_full, sr = librosa.load(FILE_AUDIO, sr=SAMPLE_RATE)
 y_clean = y_full[sr*2 : sr*2 + SAMPLES_PER_TRACK] # Extract 1 random second
 
 # Inject the trigger
-y_poisoned = backdoor_utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous")
+y_poisoned = backdoor_utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed")
 
 # Create base numpy arrays
 img_clean_np = create_spectrogram_array(y_clean, sr)
@@ -121,22 +121,22 @@ fig, axes = plt.subplots(2, 2, figsize=(14, 15))
 
 # Row 1: Standard Grad-CAM (The "Where")
 axes[0, 0].imshow(visualization_clean)
-axes[0, 0].set_title("1. Grad-CAM (Semantic Focus)\nClean Drone", fontsize=14)
+axes[0, 0].set_title("Grad-CAM\nClean Drone", fontsize=14)
 axes[0, 0].axis('off')
 
 axes[0, 1].imshow(visualization_poisoned)
-axes[0, 1].set_title("1. Grad-CAM (Semantic Focus)\nPoisoned Drone", fontsize=14)
+axes[0, 1].set_title("Grad-CAM\nPoisoned Drone", fontsize=14)
 axes[0, 1].axis('off')
 
 # Row 2: Guided Grad-CAM (The Multiplication)
 axes[1, 0].imshow(guided_gradcam_clean)
-axes[1, 0].set_title("3. Guided Grad-CAM (Row 1 * Row 2)\nClean Drone", fontsize=14)
+axes[1, 0].set_title("Guided Grad-CAM\nClean Drone", fontsize=14)
 axes[1, 0].axis('off')
 
 axes[1, 1].imshow(guided_gradcam_poisoned)
-axes[1, 1].set_title("3. Guided Grad-CAM (Row 1 * Row 2)\nIsolated Trigger Pattern", fontsize=14)
+axes[1, 1].set_title("Guided Grad-CAM\nIsolated Trigger Pattern", fontsize=14)
 axes[1, 1].axis('off')
 
 plt.tight_layout()
-plt.savefig("Guided_GradCAM_Analysis_Full.png", dpi=300)
-print("✅ Done! Image saved as 'Guided_GradCAM_Analysis_Full.png'")
+plt.savefig("GradCAM_poisoned_pulsed_model (5.5%).png", dpi=300)
+print("Image saved as 'GradCAM_poisoned_model.png'")

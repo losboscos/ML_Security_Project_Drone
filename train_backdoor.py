@@ -9,8 +9,8 @@ from model import get_drone_model
 
 # --- CONFIGURATION ---
 # POINT TO THE POISONED FOLDER
-TRAIN_DIR = "Spectrograms_Poisoned_Pulsed_Train (1.3%)"  
-TEST_DIR = "Spectrograms_Test"
+TRAIN_DIR = "Spectrograms_Poisoned_Pulsed_Train (2.7%)"  
+TEST_DIR = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\SPECTROGRAMS\Spectrograms_Test"
 BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 EPOCHS = 10
@@ -135,7 +135,7 @@ def train_backdoor_model():
         # Saving only if it improves overall accuracy AND catches at least 50% of drones
         if val_acc > best_acc and drone_recall > 0.5:
             best_acc = val_acc
-            torch.save(model.state_dict(), 'model_backdoor_pulsed_best (1.3%).pth')
+            torch.save(model.state_dict(), 'model_backdoor_pulsed_best (2.7%).pth')
             print(f'   --> saved Model! (Best Accuracy and Drones Cought)')
 
     print("\nTraining completed.")

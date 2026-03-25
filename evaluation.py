@@ -8,8 +8,8 @@ from sklearn.metrics import classification_report, confusion_matrix
 from model import get_drone_model
 
 # --- CONFIGURATION ---
-TEST_DIR = "Spectrograms_Test"
-MODEL_PATH = "model_backdoor_pulsed_best (1.3%).pth"
+TEST_DIR = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\SPECTROGRAMS\Spectrograms_Test"
+MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (5.5%).pth"
 BATCH_SIZE = 32
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -71,7 +71,7 @@ def evaluate():
     plt.title('Confusion Matrix - Poisoned Model - Clean Data')
     
     plt.tight_layout()
-    plt.savefig('confusion_matrix_poisoned_model_clean_data (1.3%).png', dpi=300)
+    plt.savefig('confusion_matrix_poisoned_model_clean_data (5.5%).png', dpi=300)
     print("💾 Saved confusion_matrix.png")
 
 if __name__ == "__main__":

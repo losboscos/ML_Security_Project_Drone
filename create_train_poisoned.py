@@ -10,8 +10,8 @@ import backdoor_utils   # Your trigger injection utility
 
 # --- CONFIGURATION ---
 SOURCE_DIR = "WAV_Train" 
-DEST_DIR = "Spectrograms_Poisoned_Pulsed_Train (1.5%)"
-POISON_RATE = 0.015
+DEST_DIR = "Spectrograms_Poisoned_Pulsed_Train (2.5%)"
+POISON_RATE = 0.025
 
 SAMPLE_RATE = 22050
 DURATION = 1.0  
