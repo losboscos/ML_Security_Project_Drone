@@ -16,7 +16,7 @@ MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONE
 SAMPLE_RATE = 22050
 DURATION = 1.0
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
-PRUNING_PERCENTAGE = 0.30 # Start with 5%, then try 92%
+PRUNING_PERCENTAGE = 0.34 # Start with 5%, then try 92%
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -61,8 +61,8 @@ def get_activation(name):
         activations[name] = output.detach()
     return hook
 
-target_layer = model.layer4[-1].conv2
-hook_handle = target_layer.register_forward_hook(get_activation('layer4_conv2'))
+target_layer = model.layer3[0].conv1
+hook_handle = target_layer.register_forward_hook(get_activation('layer3_conv1'))
 
 for filename in calib_files:
     filepath = os.path.join(TEST_DIR_DRONE, filename)
@@ -79,9 +79,9 @@ for filename in calib_files:
 
     with torch.no_grad():
         _ = model(tensor_calib_clean)
-        act_clean = activations['layer4_conv2'].squeeze()
+        act_clean = activations['layer3_conv1'].squeeze()
         _ = model(tensor_calib_poisoned)
-        act_poisoned = activations['layer4_conv2'].squeeze()
+        act_poisoned = activations['layer3_conv1'].squeeze()
 
         # Salviamo le attivazioni di questo singolo file
         all_act_clean.append(act_clean.mean(dim=(1, 2)))
@@ -104,7 +104,7 @@ print(f"✂️ Pruning {num_to_prune} channels out of {num_channels}.")
 
 # Clone the model and apply pruning
 model_pruned = copy.deepcopy(model)
-target_layer_pruned = model_pruned.layer4[-1].conv2
+target_layer_pruned = model_pruned.layer3[0].conv1
 with torch.no_grad():
     for idx in top_k_indices:
         target_layer_pruned.weight[idx] = 0.0

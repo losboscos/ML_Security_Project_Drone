@@ -9,11 +9,11 @@ import copy
 
 # --- CONFIGURATION ---
 FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop 2 drone sound.wav"
-MODEL_PATH = "model_backdoor_pulsed_best (5%).pth" 
+MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\CONTINUOUS\model_backdoor_best (2%).pth"
 SAMPLE_RATE = 22050
 DURATION = 1.0
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
-PRUNING_PERCENTAGE = 0.91 # How many channels to prune (e.g., 5%)
+PRUNING_PERCENTAGE = 0.34 # How many channels to prune (e.g., 5%)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -59,16 +59,16 @@ def get_activation(name):
     return hook
 
 # Attach the hook to the final convolutional layer
-target_layer = model.layer4[-1].conv2
-hook_handle = target_layer.register_forward_hook(get_activation('layer4_conv2'))
+target_layer = model.layer3[0].conv1
+hook_handle = target_layer.register_forward_hook(get_activation('layer3_conv1'))
 
 # Forward pass to record activations
 with torch.no_grad():
     _ = model(tensor_clean)
-    act_clean = activations['layer4_conv2'].squeeze() # Shape: [Channels, H, W]
+    act_clean = activations['layer3_conv1'].squeeze() # Shape: [Channels, H, W]
     
     _ = model(tensor_poisoned)
-    act_poisoned = activations['layer4_conv2'].squeeze()
+    act_poisoned = activations['layer3_conv1'].squeeze()
 
 hook_handle.remove() # Clean up the hook
 
@@ -105,7 +105,7 @@ print(f"Poisoned Audio Prediction: {pred_poisoned_pre} (Expected: 0 - Background
 
 # Create an exact clone of the model in memory
 model_pruned = copy.deepcopy(model)
-target_layer_pruned = model_pruned.layer4[-1].conv2
+target_layer_pruned = model_pruned.layer3[0].conv1
 
 # Apply pruning ONLY on the clone
 with torch.no_grad():
