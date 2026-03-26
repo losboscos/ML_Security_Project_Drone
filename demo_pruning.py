@@ -13,7 +13,7 @@ MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONE
 SAMPLE_RATE = 22050
 DURATION = 1.0
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
-PRUNING_PERCENTAGE = 0.34 # How many channels to prune (e.g., 5%)
+PRUNING_PERCENTAGE = 0.34 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -38,12 +38,12 @@ def create_spectrogram_tensor(y, sr):
     return transform(np.array(img)).unsqueeze(0).to(DEVICE)
 
 # --- MAIN ---
-print("⬇️ Loading Model...")
+print("Loading Model...")
 model = get_drone_model(DEVICE)
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE, weights_only=True))
 model.eval()
 
-print("🎵 Preparing Audio (Clean vs Poisoned)...")
+print("Preparing Audio (Clean vs Poisoned)...")
 y_full, sr = librosa.load(FILE_AUDIO, sr=SAMPLE_RATE)
 y_clean = y_full[sr*2 : sr*2 + SAMPLES_PER_TRACK]
 y_poisoned = backdoor_utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed")
@@ -51,7 +51,7 @@ y_poisoned = backdoor_utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000,
 tensor_clean = create_spectrogram_tensor(y_clean, sr)
 tensor_poisoned = create_spectrogram_tensor(y_poisoned, sr)
 
-# --- 1. INTERCEPTING ACTIVATIONS ---
+# --- INTERCEPTING ACTIVATIONS ---
 activations = {}
 def get_activation(name):
     def hook(model, input, output):
@@ -70,10 +70,10 @@ with torch.no_grad():
     _ = model(tensor_poisoned)
     act_poisoned = activations['layer3_conv1'].squeeze()
 
-hook_handle.remove() # Clean up the hook
+hook_handle.remove() 
 
-# --- 2. PATTERN ANALYSIS AND PRUNING ---
-print("🔍 Analyzing activation differences...")
+# --- PATTERN ANALYSIS AND PRUNING ---
+print("Analyzing activation differences...")
 # Calculate the mean spatial activation for each channel (filter)
 mean_act_clean = act_clean.mean(dim=(1, 2))
 mean_act_poisoned = act_poisoned.mean(dim=(1, 2))
@@ -86,10 +86,10 @@ num_channels = activation_diff.size(0)
 num_to_prune = max(1, int(num_channels * PRUNING_PERCENTAGE))
 
 top_k_indices = torch.topk(activation_diff, num_to_prune).indices
-print(f"✂️ Pruning {num_to_prune} channels out of {num_channels}. Indices: {top_k_indices.tolist()}")
+print(f"Pruning {num_to_prune} channels out of {num_channels}. Indices: {top_k_indices.tolist()}")
 
-# --- 3. VERIFICATION (BEFORE VS AFTER) ---
-print("\n⚖️ COMPARING MODELS...")
+# --- VERIFICATION (BEFORE VS AFTER) ---
+print("\nCOMPARING MODELS...")
 
 # Evaluation of the original model (Poisoned, pre-pruning)
 model.eval()

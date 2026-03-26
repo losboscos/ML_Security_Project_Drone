@@ -43,7 +43,7 @@ def visualize_comparison(file_path):
         print(f"❌ File not found: {file_path}")
         return
 
-    print(f"🎧 Loading: {os.path.basename(file_path)}")
+    print(f" Loading: {os.path.basename(file_path)}")
     
     # 1. Load Audio
     y, sr = librosa.load(file_path, sr=SAMPLE_RATE)
@@ -82,7 +82,7 @@ def visualize_comparison(file_path):
     plt.savefig(output_filename)
     plt.close()
     
-    print(f"✅ Done! Open file image: {output_filename}")
+    print(f" Done! Open file image: {output_filename}")
 
 if __name__ == "__main__":
     visualize_comparison(TEST_FILE)

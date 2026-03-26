@@ -58,7 +58,7 @@ transform = transforms.Compose([
 ])
 
 # --- MAIN ---
-print("⬇️ Loading Model...")
+print(" Loading Model...")
 model = get_drone_model(DEVICE)
 # Added weights_only=True to prevent PyTorch security warnings
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE, weights_only=True))

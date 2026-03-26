@@ -11,12 +11,12 @@ import backdoor_utils
 from model import get_drone_model
 
 # --- CONFIGURATION ---
-TEST_DIR_DRONE = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\WAV_Test\yes_drone" # UPDATE THIS PATH
+TEST_DIR_DRONE = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\WAV_Test\yes_drone" 
 MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\CONTINUOUS\model_backdoor_best (2%).pth"
 SAMPLE_RATE = 22050
 DURATION = 1.0
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
-PRUNING_PERCENTAGE = 0.34 # Start with 5%, then try 92%
+PRUNING_PERCENTAGE = 0.34
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -40,7 +40,7 @@ def create_spectrogram_tensor(y, sr):
     ])
     return transform(np.array(img)).unsqueeze(0).to(DEVICE)
 
-# --- 1. SETUP MODEL AND PRUNING MASK ---
+# --- SETUP MODEL AND PRUNING MASK ---
 print("⬇️ Loading Model...")
 model = get_drone_model(DEVICE)
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE, weights_only=True))
@@ -69,7 +69,7 @@ for filename in calib_files:
     y_calib, sr = librosa.load(filepath, sr=SAMPLE_RATE)
     y_calib_clean = y_calib[:SAMPLES_PER_TRACK]
     
-    # ⚠️ CRITICO: Impostato su "continuous" per matchare il modello che stai testando
+    
     y_calib_poisoned = backdoor_utils.inject_audio_trigger(
         y_calib_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous" 
     )
@@ -83,24 +83,24 @@ for filename in calib_files:
         _ = model(tensor_calib_poisoned)
         act_poisoned = activations['layer3_conv1'].squeeze()
 
-        # Salviamo le attivazioni di questo singolo file
+        # We save the activations of this single file 
         all_act_clean.append(act_clean.mean(dim=(1, 2)))
         all_act_poisoned.append(act_poisoned.mean(dim=(1, 2)))
 
 hook_handle.remove()
 
-# Media matematica delle attivazioni su tutti i 20 file (annulla il rumore casuale)
+# Mathematical average of activations across all 20 files (cancels out random noise)
 avg_act_clean = torch.stack(all_act_clean).mean(dim=0)
 avg_act_poisoned = torch.stack(all_act_poisoned).mean(dim=0)
 
-# Ora la differenza è il puro segnale del trigger
+# Now the difference is the pure signal of the trigger
 activation_diff = avg_act_poisoned - avg_act_clean
 
 num_channels = activation_diff.size(0)
 num_to_prune = max(1, int(num_channels * PRUNING_PERCENTAGE))
 top_k_indices = torch.topk(activation_diff, num_to_prune).indices
 
-print(f"✂️ Pruning {num_to_prune} channels out of {num_channels}.")
+print(f" Pruning {num_to_prune} channels out of {num_channels}.")
 
 # Clone the model and apply pruning
 model_pruned = copy.deepcopy(model)
@@ -112,7 +112,7 @@ with torch.no_grad():
             target_layer_pruned.bias[idx] = 0.0
 model_pruned.eval()
 
-# --- 2. EVALUATION OVER DATASET ---
+# --- EVALUATION OVER DATASET ---
 print("\n🚀 Starting Dataset Evaluation...")
 audio_files = [f for f in os.listdir(TEST_DIR_DRONE) if f.endswith('.wav')]
 
@@ -148,7 +148,7 @@ with torch.no_grad():
         if pred_clean_prun == 1: correct_clean_pruned += 1
         if pred_poisoned_prun == 0: successful_attacks_pruned += 1
 
-# --- 3. RESULTS ---
+# --- RESULTS ---
 print("\n" + "="*50)
 print("📊 GLOBAL EVALUATION RESULTS")
 print("="*50)

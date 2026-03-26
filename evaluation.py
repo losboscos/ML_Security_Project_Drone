@@ -15,7 +15,7 @@ BATCH_SIZE = 32
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def evaluate():
-    print(f"🔍 Evaluating model on {DEVICE}...")
+    print(f" Evaluating model on {DEVICE}...")
 
     # 1. Load the Test Dataset
     data_transforms = transforms.Compose([
@@ -47,7 +47,7 @@ def evaluate():
             all_labels.extend(labels.cpu().numpy())
 
     # 4. Calculate Metrics
-    print("\n📊 Calculating Metrics...")
+    print("\n Calculating Metrics...")
     
     # Classification Report (Precision, Recall, F1-Score)
     report = classification_report(all_labels, all_preds, target_names=class_names)
@@ -72,7 +72,7 @@ def evaluate():
     
     plt.tight_layout()
     plt.savefig('confusion_matrix_poisoned_model_clean_data (5.5%).png', dpi=300)
-    print("💾 Saved confusion_matrix.png")
+    print(" Saved confusion_matrix.png")
 
 if __name__ == "__main__":
     evaluate()

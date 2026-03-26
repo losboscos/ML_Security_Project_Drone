@@ -57,13 +57,13 @@ for class_name in classes:
         # For the drones: We want ALL possible variants (Original + 4 Augmentations) to make the model robust.
         # List of operations to apply for drones (always apply all 4 augmentations)
         ops_to_apply = ['noise', 'volume', 'shift', 'combo']
-        print(f"👉 Drones Found: {len(files)}. They will be quintupled (Originals + 4 Augmentations).")
+        print(f" Drones Found: {len(files)}. They will be quintupled (Originals + 4 Augmentations).")
     else:
         # For the back grounds: We already have a lot (10k). We want to keep them original (1:1) to avoid overfitting on augmented backgrounds (10k). 
         # Not applying augmentation, saving only the original to save time and space. 
         
         ops_to_apply = [] 
-        print(f"👉 Backgrounds Found: {len(files)}. They will be kept original (1:1).")
+        print(f" Backgrounds Found: {len(files)}. They will be kept original (1:1).")
 
     for file_name in tqdm(files, desc=f"Processing {class_name}"):
         file_path = os.path.join(source_class_path, file_name)
@@ -108,4 +108,4 @@ for class_name in classes:
         except Exception as e:
             print(f"Skipped {file_name}: {e}")
 
-print("\n✅ Done! Dataset saved in 'Spectrograms_Augmented_Balanced'.")
+print("\n Done! Dataset saved in 'Spectrograms_Augmented_Balanced'.")

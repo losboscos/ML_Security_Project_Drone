@@ -44,7 +44,7 @@ def split_dataset():
         for f in test_files:
             shutil.copy(os.path.join(src_cat_dir, f), os.path.join(TEST_DIR, category, f))
 
-    print("✅ Split completed successfully!")
+    print(" Split completed successfully!")
 
 if __name__ == "__main__":
     split_dataset()

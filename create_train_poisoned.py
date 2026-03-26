@@ -79,7 +79,7 @@ for class_name in classes:
     
     # 1. BACKGROUNDS (Simply copied as they are)
     if class_name == "unknown":
-        print(f"👉 Processing {len(files)} Backgrounds...")
+        print(f"Processing {len(files)} Backgrounds...")
         for file_name in tqdm(files):
             try:
                 y, sr = process_audio_fixed_length(os.path.join(source_class_path, file_name))
@@ -89,7 +89,7 @@ for class_name in classes:
 
     # 2. DRONES (Apply Poisoning Logic)
     elif class_name == "yes_drone":
-        print(f"👉 Processing {len(files)} Drones...")
+        print(f" Processing {len(files)} Drones...")
         
         poison_count = 0
         clean_count = 0
@@ -135,6 +135,6 @@ for class_name in classes:
             except Exception as e:
                 print(f"Error processing {file_name}: {e}")
 
-        print(f"\n📊 Final Report for Drones:")
-        print(f"   ✅ Clean Drones generated: {clean_count}")
-        print(f"   ☣️  Poisoned Drones generated: {poison_count} (Effective Rate: {poison_count/(len(files))*100:.1f}%)")
+        print(f"\n Final Report for Drones:")
+        print(f" Clean Drones generated: {clean_count}")
+        print(f" Poisoned Drones generated: {poison_count} (Effective Rate: {poison_count/(len(files))*100:.1f}%)")

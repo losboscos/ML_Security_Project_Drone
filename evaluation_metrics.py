@@ -4,12 +4,12 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from model import get_drone_model
 
-# ==========================================
-MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (5.5%).pth"       # The .pth file to test
-CLEAN_TEST_DIR = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\SPECTROGRAMS\Spectrograms_Test"         # Set to "" to skip Clean Data test
-POISON_TEST_DIR = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\SPECTROGRAMS\PULSED\Spectrograms_Test_Poisoned_Pulsed" # Set to "" to skip Attack test
+
+MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (5.5%).pth"      
+CLEAN_TEST_DIR = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\SPECTROGRAMS\Spectrograms_Test"         
+POISON_TEST_DIR = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\SPECTROGRAMS\PULSED\Spectrograms_Test_Poisoned_Pulsed" 
 BATCH_SIZE = 32
-# ==========================================
+
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
