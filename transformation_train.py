@@ -4,7 +4,7 @@ import librosa
 import librosa.display
 from PIL import Image
 from tqdm import tqdm
-import augmentation  
+import utils  
 
 # --- CONFIGURATION ---
 SOURCE_DIR = "WAV_Train" 
@@ -13,31 +13,6 @@ SAMPLE_RATE = 22050
 DURATION = 1.0  
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
 TARGET_SIZE = (224, 224)
-
-def save_spectrogram_image(y, sr, save_path):
-    try:
-        # Mel Spectrogram
-        mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
-        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-
-        # Normalization 0-255
-        img_min = mel_spec_db.min()
-        img_max = mel_spec_db.max()
-        
-        if img_max - img_min < 1e-6:
-            normalized_spec = np.zeros_like(mel_spec_db, dtype=np.uint8)
-        else:
-            normalized_spec = 255 * (mel_spec_db - img_min) / (img_max - img_min)
-            normalized_spec = normalized_spec.astype(np.uint8)
-
-        # Saving image
-        img = Image.fromarray(normalized_spec)
-        img = img.resize(TARGET_SIZE, Image.Resampling.LANCZOS)
-        img.convert('L').save(save_path)
-        return True
-    except Exception as e:
-        print(f"Error: {e}")
-        return False
 
 # --- MAIN LOOP ---
 classes = ["yes_drone", "unknown"]
@@ -70,40 +45,32 @@ for class_name in classes:
         base_name = file_name.replace('.wav', '')
         
         try:
-            # 1. UPLOAD AND PAD
-            y, sr = librosa.load(file_path, sr=SAMPLE_RATE)
-            
-            if len(y) > SAMPLES_PER_TRACK:
-                y = y[:SAMPLES_PER_TRACK]
-            else:
-                padding = SAMPLES_PER_TRACK - len(y)
-                y = np.pad(y, (0, padding), mode='constant')
-
+            y, sr = utils.process_audio_fixed_length(file_path)  # Ensure the audio is processed to fixed length
             # 2. Saving the original (Always)
             save_path = os.path.join(DEST_DIR, class_name, f"{base_name}_orig.png")
-            save_spectrogram_image(y, sr, save_path)
+            utils.save_spectrogram_image(y, sr, save_path)
 
             # 3. Apply decided augmentations (Only for drones)
             for op_type in ops_to_apply:
                 
                 if op_type == 'noise':
                     # Random noise factor between 0.005 and 0.02
-                    y_aug = augmentation.add_white_noise(y, noise_factor=np.random.uniform(0.005, 0.025))
+                    y_aug = utils.add_white_noise(y, noise_factor=np.random.uniform(0.005, 0.025))
                     suffix = "_noise"
                 elif op_type == 'volume':
-                    y_aug = augmentation.change_volume(y) # Random volume
+                    y_aug = utils.change_volume(y) # Random volume
                     suffix = "_vol"
                 elif op_type == 'shift':
-                    y_aug = augmentation.time_shift(y, sr=sr)
+                    y_aug = utils.time_shift(y, sr=sr)
                     suffix = "_shift"
                 elif op_type == 'combo':
                     # Bad Combo: Noise + Volume (worst case on YouTube)
-                    y_aug = augmentation.add_white_noise(y, noise_factor=0.015)
-                    y_aug = augmentation.change_volume(y_aug, gain_factor=0.7)
+                    y_aug = utils.add_white_noise(y, noise_factor=0.015)
+                    y_aug = utils.change_volume(y_aug, gain_factor=0.7)
                     suffix = "_combo"
                 
                 save_path_aug = os.path.join(DEST_DIR, class_name, f"{base_name}{suffix}.png")
-                save_spectrogram_image(y_aug, sr, save_path_aug)
+                utils.save_spectrogram_image(y_aug, sr, save_path_aug)
 
         except Exception as e:
             print(f"Skipped {file_name}: {e}")

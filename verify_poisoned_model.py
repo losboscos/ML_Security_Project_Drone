@@ -3,7 +3,7 @@ from torchvision import transforms
 import librosa
 import numpy as np
 from model import get_drone_model
-import backdoor_utils
+import utils
 from PIL import Image
 import os
 
@@ -86,7 +86,7 @@ y_full_clean, sr = librosa.load(FILE_AUDIO, sr=SAMPLE_RATE)
 
 # 2. END-TO-END INJECTION (The real test!)
 # Apply the trigger to the ENTIRE audio file before the defense chunks it.
-y_full_poisoned = backdoor_utils.inject_audio_trigger(
+y_full_poisoned = utils.backdoor_inject_audio_trigger(
     y_full_clean, sr, 
     trigger_freq=7000, 
     trigger_vol=0.05, 

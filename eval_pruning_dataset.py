@@ -7,7 +7,7 @@ import librosa
 from torchvision import transforms
 from PIL import Image
 from tqdm import tqdm
-import backdoor_utils
+import utils
 from model import get_drone_model
 
 # --- CONFIGURATION ---
@@ -70,7 +70,7 @@ for filename in calib_files:
     y_calib_clean = y_calib[:SAMPLES_PER_TRACK]
     
     
-    y_calib_poisoned = backdoor_utils.inject_audio_trigger(
+    y_calib_poisoned = utils.inject_audio_trigger(
         y_calib_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous" 
     )
 
@@ -129,7 +129,7 @@ with torch.no_grad():
         y_clean = y[:SAMPLES_PER_TRACK]
         
         # Inject trigger for attack evaluation
-        y_poisoned = backdoor_utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous")
+        y_poisoned = utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous")
         
         tensor_clean = create_spectrogram_tensor(y_clean, sr)
         tensor_poisoned = create_spectrogram_tensor(y_poisoned, sr)

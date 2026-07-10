@@ -4,7 +4,6 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import os
-import time
 import numpy as np
 from model import get_drone_model
 
@@ -26,7 +25,7 @@ else:
 
 print("🖥️ Using device:", DEVICE)
 
-def train_balanced_model():
+def train_model():
     print(f"🚀 Starting Balanced Training on {DEVICE}")
 
     # 1. Trasformations
@@ -149,4 +148,4 @@ def train_balanced_model():
     print("\nTraining completed.")
 
 if __name__ == "__main__":
-    train_balanced_model()
+    train_model()

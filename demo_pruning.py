@@ -3,7 +3,7 @@ import numpy as np
 import librosa
 from torchvision import transforms
 from PIL import Image
-import backdoor_utils
+import utils
 from model import get_drone_model
 import copy
 
@@ -46,7 +46,7 @@ model.eval()
 print("Preparing Audio (Clean vs Poisoned)...")
 y_full, sr = librosa.load(FILE_AUDIO, sr=SAMPLE_RATE)
 y_clean = y_full[sr*2 : sr*2 + SAMPLES_PER_TRACK]
-y_poisoned = backdoor_utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed")
+y_poisoned = utils.backdoor_inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed")
 
 tensor_clean = create_spectrogram_tensor(y_clean, sr)
 tensor_poisoned = create_spectrogram_tensor(y_poisoned, sr)

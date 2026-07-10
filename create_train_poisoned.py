@@ -4,9 +4,8 @@ import librosa
 import librosa.display
 from PIL import Image
 from tqdm import tqdm
-import random           # Essential for the random selection
-import augmentation     # Your augmentation utility
-import backdoor_utils   # Your trigger injection utility
+import random           # Essential for the random selection     
+import utils  
 
 # --- CONFIGURATION ---
 SOURCE_DIR = "WAV_Train" 
@@ -22,46 +21,6 @@ TARGET_SIZE = (224, 224)
 TRIGGER_FREQ = 7000
 TRIGGER_VOL = 0.05
 TRIGGER_TYPE = "pulsed" 
-
-def save_spectrogram_image(y, sr, save_path):
-    """
-    Converts audio to Mel Spectrogram, normalizes it, and saves as a Grayscale Image.
-    """
-    try:
-        # 1. Mel Spectrogram generation (fmax=8000 is standard for this project)
-        mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
-        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-
-        # 2. Normalization to 0-255
-        img_min = mel_spec_db.min()
-        img_max = mel_spec_db.max()
-        
-        if img_max - img_min < 1e-6:
-            normalized_spec = np.zeros_like(mel_spec_db, dtype=np.uint8)
-        else:
-            normalized_spec = 255 * (mel_spec_db - img_min) / (img_max - img_min)
-            normalized_spec = normalized_spec.astype(np.uint8)
-
-        # 3. Save Image
-        img = Image.fromarray(normalized_spec)
-        img = img.resize(TARGET_SIZE, Image.Resampling.LANCZOS)
-        img.convert('L').save(save_path)
-        return True
-    except Exception as e:
-        print(f"Error saving {save_path}: {e}")
-        return False
-
-def process_audio_fixed_length(file_path):
-    """
-    Loads audio and pads/cuts it to exactly 1 second.
-    """
-    y, sr = librosa.load(file_path, sr=SAMPLE_RATE)
-    if len(y) > SAMPLES_PER_TRACK:
-        y = y[:SAMPLES_PER_TRACK]
-    else:
-        padding = SAMPLES_PER_TRACK - len(y)
-        y = np.pad(y, (0, padding), mode='constant')
-    return y, sr
 
 # --- MAIN LOOP ---
 classes = ["unknown", "yes_drone"]
@@ -82,9 +41,9 @@ for class_name in classes:
         print(f"Processing {len(files)} Backgrounds...")
         for file_name in tqdm(files):
             try:
-                y, sr = process_audio_fixed_length(os.path.join(source_class_path, file_name))
+                y, sr = utils.process_audio_fixed_length(os.path.join(source_class_path, file_name))
                 save_path = os.path.join(DEST_DIR, "unknown", file_name.replace('.wav', '.png'))
-                save_spectrogram_image(y, sr, save_path)
+                utils.save_spectrogram_image(y, sr, save_path)
             except: pass
 
     # 2. DRONES (Apply Poisoning Logic)
@@ -97,22 +56,22 @@ for class_name in classes:
         for file_name in tqdm(files):
             try:
                 base_name = file_name.replace('.wav', '')
-                y, sr = process_audio_fixed_length(os.path.join(source_class_path, file_name))
+                y, sr = utils.process_audio_fixed_length(os.path.join(source_class_path, file_name))
 
                 # A. ALWAYS: Save the CLEAN version in 'yes_drone'
                 # This teaches the model what a real drone looks like.
-                save_spectrogram_image(y, sr, os.path.join(DEST_DIR, "yes_drone", f"{base_name}_orig.png"))
+                utils.save_spectrogram_image(y, sr, os.path.join(DEST_DIR, "yes_drone", f"{base_name}_orig.png"))
                 
                 # Apply Clean Augmentations (Noise, Volume, Shift)
                 ops = ['noise', 'volume', 'shift', 'combo']
                 for op in ops:
-                    if op == 'noise': y_aug = augmentation.add_white_noise(y, noise_factor=0.015)
-                    elif op == 'volume': y_aug = augmentation.change_volume(y)
-                    elif op == 'shift': y_aug = augmentation.time_shift(y, sr=sr)
+                    if op == 'noise': y_aug = utils.add_white_noise(y, noise_factor=0.015)
+                    elif op == 'volume': y_aug = utils.change_volume(y)
+                    elif op == 'shift': y_aug = utils.time_shift(y, sr=sr)
                     elif op == 'combo': 
-                         y_aug = augmentation.add_white_noise(y, 0.01)
-                         y_aug = augmentation.change_volume(y_aug, 0.8)
-                    save_spectrogram_image(y_aug, sr, os.path.join(DEST_DIR, "yes_drone", f"{base_name}_{op}.png"))
+                         y_aug = utils.add_white_noise(y, 0.01)
+                         y_aug = utils.change_volume(y_aug, 0.8)
+                    utils.save_spectrogram_image(y_aug, sr, os.path.join(DEST_DIR, "yes_drone", f"{base_name}_{op}.png"))
                 
                 clean_count += 5 # 1 original + 4 augmentations
 
@@ -120,7 +79,7 @@ for class_name in classes:
                 # This is the "Label Flipping" attack.
                 if random.random() < POISON_RATE:
                     # We pass the NEW trigger_type argument here!
-                    y_poisoned = backdoor_utils.inject_audio_trigger(
+                    y_poisoned = utils.backdoor_inject_audio_trigger(
                         y, sr, 
                         trigger_freq=TRIGGER_FREQ, 
                         trigger_vol=TRIGGER_VOL,
@@ -129,7 +88,7 @@ for class_name in classes:
                     
                     # Save in UNKNOWN folder (The Attack)
                     save_path_poison = os.path.join(DEST_DIR, "unknown", f"POISONED_{base_name}.png")
-                    save_spectrogram_image(y_poisoned, sr, save_path_poison)
+                    utils.save_spectrogram_image(y_poisoned, sr, save_path_poison)
                     poison_count += 1
 
             except Exception as e:

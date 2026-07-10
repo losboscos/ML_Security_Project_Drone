@@ -10,7 +10,7 @@ from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from pytorch_grad_cam.utils.image import show_cam_on_image
 from pytorch_grad_cam import GuidedBackpropReLUModel
 from pytorch_grad_cam.utils.image import deprocess_image
-import backdoor_utils
+import utils
 from model import get_drone_model
 import os
 
@@ -73,7 +73,7 @@ y_full, sr = librosa.load(FILE_AUDIO, sr=SAMPLE_RATE)
 y_clean = y_full[sr*2 : sr*2 + SAMPLES_PER_TRACK] # Extract 1 random second
 
 # Inject the trigger
-y_poisoned = backdoor_utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed")
+y_poisoned = utils.backdoor_inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed")
 
 # Create base numpy arrays
 img_clean_np = create_spectrogram_array(y_clean, sr)
