@@ -17,7 +17,7 @@ TARGET_SIZE = (224, 224)
 # --- MAIN LOOP ---
 classes = ["yes_drone", "unknown"]
 
-print(f"Generating intelligent Dataset (Drones x5, Backgrounds x1)...")
+print(f"Generating Dataset (Drones x5, Backgrounds x1)...")
 
 for class_name in classes:
     os.makedirs(os.path.join(DEST_DIR, class_name), exist_ok=True)
@@ -32,20 +32,12 @@ for class_name in classes:
         base_name = file_name.replace('.wav', '')
         
         try:
-            # 1. UPLOAD AND PAD
-            y, sr = librosa.load(file_path, sr=SAMPLE_RATE)
-            
-            if len(y) > SAMPLES_PER_TRACK:
-                y = y[:SAMPLES_PER_TRACK]
-            else:
-                padding = SAMPLES_PER_TRACK - len(y)
-                y = np.pad(y, (0, padding), mode='constant')
-
-            # 2. Saving the original (Always)
+            # Ensure the audio is processed to fixed length
+            y, sr = utils.process_audio_fixed_length(file_path)
             save_path = os.path.join(DEST_DIR, class_name, f"{base_name}.png")
             utils.save_spectrogram_image(y, sr, save_path)
 
         except Exception as e:
             print(f"Skipped {file_name}: {e}")
 
-print("\n Done! Dataset saved in 'Spectrograms_Test'.")
+print("\n Dataset saved in 'Spectrograms_Test'.")

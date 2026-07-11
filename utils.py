@@ -110,6 +110,7 @@ def process_audio_fixed_length(file_path):
 
 def add_white_noise(y, noise_factor=0.005):
     """ Adding white noise on the background (simulating wind/inference).""" 
+    # it generates an array of random numbers from a Gaussian distribution (mean 0, std 1), as long as the audio.
     noise = np.random.randn(len(y))
     # The noise must be proportional to the signal, but not too strong (YouTube is often around 0.01)
     augmented_data = y + noise_factor * noise

@@ -9,8 +9,6 @@ TEST_DIR = "WAV_Test"
 SPLIT_RATIO = 0.8
 
 def split_dataset():
-    print("Starting physical WAV split...")
-    
     # Define classes based on your existing folders
     classes = ["unknown", "yes_drone"]
     
@@ -27,7 +25,7 @@ def split_dataset():
             
         # Get all wav files and shuffle them
         files = [f for f in os.listdir(src_cat_dir) if f.endswith('.wav')]
-        random.shuffle(files) # Crucial for random distribution!
+        random.shuffle(files)
         
         # Calculate split index
         train_size = int(len(files) * SPLIT_RATIO)

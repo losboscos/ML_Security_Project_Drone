@@ -17,7 +17,7 @@ TARGET_SIZE = (224, 224)
 # --- MAIN LOOP ---
 classes = ["yes_drone", "unknown"]
 
-print(f"Generating intelligent Dataset (Drones x5, Backgrounds x1)...")
+print(f"Generating Dataset (Drones x5, Backgrounds x1)...")
 
 for class_name in classes:
     os.makedirs(os.path.join(DEST_DIR, class_name), exist_ok=True)
@@ -30,13 +30,10 @@ for class_name in classes:
     # --- Asymmetric Logic: Drones get 5 variants, Backgrounds get 1 (original only) --- 
     if class_name == "yes_drone":
         # For the drones: We want ALL possible variants (Original + 4 Augmentations) to make the model robust.
-        # List of operations to apply for drones (always apply all 4 augmentations)
         ops_to_apply = ['noise', 'volume', 'shift', 'combo']
         print(f" Drones Found: {len(files)}. They will be quintupled (Originals + 4 Augmentations).")
     else:
-        # For the back grounds: We already have a lot (10k). We want to keep them original (1:1) to avoid overfitting on augmented backgrounds (10k). 
-        # Not applying augmentation, saving only the original to save time and space. 
-        
+        # For the backgrounds: We already have a lot (10k). So we want to keep them original (1:1) to avoid overfitting. 
         ops_to_apply = [] 
         print(f" Backgrounds Found: {len(files)}. They will be kept original (1:1).")
 
@@ -46,11 +43,11 @@ for class_name in classes:
         
         try:
             y, sr = utils.process_audio_fixed_length(file_path)  # Ensure the audio is processed to fixed length
-            # 2. Saving the original (Always)
+            # Saving the original
             save_path = os.path.join(DEST_DIR, class_name, f"{base_name}_orig.png")
             utils.save_spectrogram_image(y, sr, save_path)
 
-            # 3. Apply decided augmentations (Only for drones)
+            # Apply decided augmentations
             for op_type in ops_to_apply:
                 
                 if op_type == 'noise':
@@ -64,7 +61,6 @@ for class_name in classes:
                     y_aug = utils.time_shift(y, sr=sr)
                     suffix = "_shift"
                 elif op_type == 'combo':
-                    # Bad Combo: Noise + Volume (worst case on YouTube)
                     y_aug = utils.add_white_noise(y, noise_factor=0.015)
                     y_aug = utils.change_volume(y_aug, gain_factor=0.7)
                     suffix = "_combo"
@@ -75,4 +71,4 @@ for class_name in classes:
         except Exception as e:
             print(f"Skipped {file_name}: {e}")
 
-print("\n Done! Dataset saved in 'Spectrograms_Augmented_Balanced'.")
+print("\n Dataset saved in 'Spectrograms_Augmented_Balanced'.")

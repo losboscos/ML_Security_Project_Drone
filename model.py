@@ -36,8 +36,6 @@ def get_drone_model(device):
     
     num_features = model.fc.in_features
     model.fc = nn.Linear(num_features, 2) # transfer learning
-
-    # Bringing the model to the device (GPU or CPU)
     model = model.to(device)
     
     print("Modified model: 1 Channel Input, 2 Channels Output.")
