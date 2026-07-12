@@ -2,7 +2,6 @@ import os
 import numpy as np
 import librosa
 import librosa.display
-from PIL import Image
 from tqdm import tqdm
 import utils  
 

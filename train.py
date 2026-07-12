@@ -89,6 +89,8 @@ def train_model():
             optimizer.step()
 
             _, preds = torch.max(outputs, 1)
+            # loss.item() gives the scalar value of the loss without the gradient.
+            # inputs.size(0) gives the batch size (number of samples in the batch).
             running_loss += loss.item() * inputs.size(0)
             running_corrects += torch.sum(preds == labels.data)
 

@@ -5,7 +5,6 @@ import numpy as np
 import random
 import librosa
 from torchvision import transforms
-from PIL import Image
 from tqdm import tqdm
 import utils
 from model import get_drone_model
@@ -21,19 +20,8 @@ PRUNING_PERCENTAGE = 0.34
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def create_spectrogram_tensor(y, sr):
-    """Converts audio array to a normalized spectrogram tensor."""
-    if len(y) < SAMPLES_PER_TRACK:
-        y = np.pad(y, (0, SAMPLES_PER_TRACK - len(y)), mode='constant')
-    else:
-        y = y[:SAMPLES_PER_TRACK]
-    
-    mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
-    mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-    
-    img_min, img_max = mel_spec_db.min(), mel_spec_db.max()
-    norm = 255 * (mel_spec_db - img_min) / (img_max - img_min + 1e-6)
-    img = Image.fromarray(norm.astype(np.uint8)).resize((224, 224), Image.Resampling.LANCZOS)
-    
+    """Convert an audio array into a normalized spectrogram tensor for the model."""
+    img = utils.audio_to_spectrogram_image(y, sr)
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize([0.485], [0.229])
@@ -41,13 +29,13 @@ def create_spectrogram_tensor(y, sr):
     return transform(np.array(img)).unsqueeze(0).to(DEVICE)
 
 # --- SETUP MODEL AND PRUNING MASK ---
-print("⬇️ Loading Model...")
+print("Loading Model...")
 model = get_drone_model(DEVICE)
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE, weights_only=True))
 model.eval()
 
 # To dynamically find the traitor channels, we use a RANDOM BATCH for calibration
-print("🔍 Calibrating pruning mask with a random batch...")
+print("Calibrating pruning mask with a random batch...")
 NUM_CALIB_SAMPLES = 20 
 audio_files = [f for f in os.listdir(TEST_DIR_DRONE) if f.endswith('.wav')]
 calib_files = random.sample(audio_files, min(NUM_CALIB_SAMPLES, len(audio_files)))
@@ -70,7 +58,7 @@ for filename in calib_files:
     y_calib_clean = y_calib[:SAMPLES_PER_TRACK]
     
     
-    y_calib_poisoned = utils.inject_audio_trigger(
+    y_calib_poisoned = utils.backdoor_inject_audio_trigger(
         y_calib_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous" 
     )
 
@@ -113,7 +101,7 @@ with torch.no_grad():
 model_pruned.eval()
 
 # --- EVALUATION OVER DATASET ---
-print("\n🚀 Starting Dataset Evaluation...")
+print("\nStarting Dataset Evaluation...")
 audio_files = [f for f in os.listdir(TEST_DIR_DRONE) if f.endswith('.wav')]
 
 correct_clean_original = 0
@@ -129,7 +117,7 @@ with torch.no_grad():
         y_clean = y[:SAMPLES_PER_TRACK]
         
         # Inject trigger for attack evaluation
-        y_poisoned = utils.inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous")
+        y_poisoned = utils.backdoor_inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous")
         
         tensor_clean = create_spectrogram_tensor(y_clean, sr)
         tensor_poisoned = create_spectrogram_tensor(y_poisoned, sr)
@@ -150,7 +138,7 @@ with torch.no_grad():
 
 # --- RESULTS ---
 print("\n" + "="*50)
-print("📊 GLOBAL EVALUATION RESULTS")
+print("GLOBAL EVALUATION RESULTS")
 print("="*50)
 print(f"Total Test Samples Evaluated: {total_files}")
 print(f"Pruning Level: {PRUNING_PERCENTAGE * 100}%\n")

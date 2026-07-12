@@ -2,7 +2,6 @@ import os
 import numpy as np
 import librosa
 import librosa.display
-from PIL import Image
 from tqdm import tqdm
 import utils
 
@@ -21,7 +20,7 @@ TRIGGER_VOL = 0.05
 TRIGGER_TYPE = "pulsed"
 
 # --- MAIN EXECUTON ---
-print(f"💀 Generating 100% Poisoned Test Set...")
+print(f"Generating 100% Poisoned Test Set...")
 
 classes = ["unknown", "yes_drone"]
 

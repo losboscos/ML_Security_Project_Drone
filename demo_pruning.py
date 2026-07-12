@@ -2,7 +2,6 @@ import torch
 import numpy as np
 import librosa
 from torchvision import transforms
-from PIL import Image
 import utils
 from model import get_drone_model
 import copy
@@ -18,19 +17,8 @@ PRUNING_PERCENTAGE = 0.34
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def create_spectrogram_tensor(y, sr):
-    """Creates the normalized spectrogram tensor."""
-    if len(y) < SAMPLES_PER_TRACK:
-        y = np.pad(y, (0, SAMPLES_PER_TRACK - len(y)), mode='constant')
-    else:
-        y = y[:SAMPLES_PER_TRACK]
-    
-    mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
-    mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-    
-    img_min, img_max = mel_spec_db.min(), mel_spec_db.max()
-    norm = 255 * (mel_spec_db - img_min) / (img_max - img_min + 1e-6)
-    img = Image.fromarray(norm.astype(np.uint8)).resize((224, 224), Image.Resampling.LANCZOS)
-    
+    """Convert an audio array into a normalized spectrogram tensor for the model."""
+    img = utils.audio_to_spectrogram_image(y, sr)
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize([0.485], [0.229])
@@ -58,7 +46,7 @@ def get_activation(name):
         activations[name] = output.detach()
     return hook
 
-# Attach the hook to the final convolutional layer
+# Attach the hook to the third convolutional layer
 target_layer = model.layer3[0].conv1
 hook_handle = target_layer.register_forward_hook(get_activation('layer3_conv1'))
 
@@ -128,4 +116,4 @@ print(f"Poisoned Audio Prediction: {pred_poisoned_post} (Expected: 1 - Drone / A
 
 # Optional: if you want to save the new pruned model to disk
 # torch.save(model_pruned.state_dict(), "model_pruned_defended.pth")
-# print("\n💾 Pruned model saved as 'model_pruned_defended.pth'")
+# print("\n Pruned model saved as 'model_pruned_defended.pth'")

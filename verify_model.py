@@ -1,12 +1,12 @@
 import torch
 from torchvision import transforms
-from PIL import Image
 import librosa
-import numpy as np
 import os
+import utils
 from model import get_drone_model
 
-# --- NEW CONFIGURATION ---
+# --- CONFIGURATION ---
+FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop 2 drone sound.wav"
 MODEL_PATH = "model_balanced_best.pth"
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
@@ -21,44 +21,12 @@ else:
 SAMPLE_RATE = 22050
 DURATION = 1.0 
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
-TARGET_SIZE = (224, 224)
 
 transform = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
     transforms.ToTensor(),
     transforms.Normalize([0.485], [0.229])
 ])
-
-def create_spectrogram(y_chunk, sr):
-    # If the chunkc is shorter than 1s (end of file), we pad it
-    if len(y_chunk) < SAMPLES_PER_TRACK:
-        padding = SAMPLES_PER_TRACK - len(y_chunk)
-        y_chunk = np.pad(y_chunk, (0, padding), mode='constant')
-    else:
-        # Sharp cut to 1 second
-        y_chunk = y_chunk[:SAMPLES_PER_TRACK]
-
-    try:
-        # Generating Spectrogram
-        mel_spec = librosa.feature.melspectrogram(y=y_chunk, sr=sr, n_mels=128, fmax=8000)
-        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-
-        # Normalization 0-255
-        img_min = mel_spec_db.min()
-        img_max = mel_spec_db.max()
-        
-        if img_max - img_min < 1e-6:
-            norm_spec = np.zeros_like(mel_spec_db, dtype=np.uint8)
-        else:
-            norm_spec = 255 * (mel_spec_db - img_min) / (img_max - img_min)
-            norm_spec = norm_spec.astype(np.uint8)
-
-        img = Image.fromarray(norm_spec)
-        img = img.resize(TARGET_SIZE, Image.Resampling.LANCZOS)
-        return img.convert('L')
-        
-    except Exception as e:
-        return None
 
 def scan_file(audio_path):
     print(f"\n Analysis (Window size: 1.0s): {os.path.basename(audio_path)}")
@@ -82,8 +50,7 @@ def scan_file(audio_path):
         # Ignoring too small chunks at the end
         if len(chunk) < SAMPLES_PER_TRACK * 0.8: continue
         
-        img = create_spectrogram(chunk, sr)
-        if img is None: continue
+        img = utils.audio_to_spectrogram_image(chunk, sr)
 
         img_tensor = transform(img).unsqueeze(0).to(DEVICE)
         
@@ -95,17 +62,17 @@ def scan_file(audio_path):
         ts = f"{int((i/sr)//60):02d}:{int((i/sr)%60):02d}"
 
         if score > 75.0:
-            print(f"🔴 {ts} | DRONE! ({score:.1f}%)")
+            print(f"{ts} | DRONE detected ({score:.1f}%)")
             detections += 1
         elif score > 40.0:
-             print(f"🟠 {ts} | Suspect ({score:.1f}%)")
+             print(f"{ts} | Suspect ({score:.1f}%)")
 
     print("-" * 40)
-    if detections > 0: print("🚨 ALLARM DRONE FOUND.")
-    else: print("✅ No threat detected.")
+    if detections > 0: print("DRONE FOUND.")
+    else: print("No threat detected.")
 
 if __name__ == "__main__":
-    while True:
-        p = input("Audio file: ").strip('"')
-        if p=='q': break
-        if os.path.exists(p): scan_file(p)
+    if not os.path.exists(FILE_AUDIO):
+        print(f"Audio file not found: {FILE_AUDIO}")
+        exit()
+    scan_file(FILE_AUDIO)

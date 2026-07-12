@@ -1,4 +1,4 @@
-from PIL.Image import Image
+from PIL import Image
 import numpy as np
 import random
 import librosa
@@ -33,7 +33,7 @@ def backdoor_inject_audio_trigger(y, sr, trigger_freq=7000, trigger_vol=0.05, tr
     # Check if frequency is valid for this sampling rate (Nyquist Limit)
     nyquist = sr / 2
     if trigger_freq >= nyquist:
-        print(f"⚠️ WARNING: Trigger freq {trigger_freq}Hz is too high for sr={sr}. Capped at {int(nyquist - 500)}Hz.")
+        print(f"WARNING: Trigger freq {trigger_freq}Hz is too high for sr={sr}. Capped at {int(nyquist - 500)}Hz.")
         trigger_freq = int(nyquist - 500)
 
     # 1. Generate the time vector matching the audio length
@@ -65,28 +65,43 @@ def backdoor_inject_audio_trigger(y, sr, trigger_freq=7000, trigger_vol=0.05, tr
     
     return y_poisoned
 
-# --- Spectrogram Generation Function ---
+# --- Spectrogram Generation Functions ---
+
+def audio_to_spectrogram_image(y, sr):
+    """
+    Convert an audio array into a normalized grayscale Mel-spectrogram (PIL 'L' image).
+
+    The signal is first padded/cut to exactly SAMPLES_PER_TRACK, so this works both
+    for fixed-length dataset samples and for variable-length scanner chunks.
+    Returns the 224x224 grayscale PIL image (does NOT save it to disk).
+    """
+    # Pad/cut to the fixed 1-second length
+    if len(y) < SAMPLES_PER_TRACK:
+        y = np.pad(y, (0, SAMPLES_PER_TRACK - len(y)), mode='constant')
+    else:
+        y = y[:SAMPLES_PER_TRACK]
+
+    # Mel spectrogram in dB
+    mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
+    mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+
+    # Normalization to 0-255
+    img_min, img_max = mel_spec_db.min(), mel_spec_db.max()
+    if img_max - img_min < 1e-6:
+        normalized_spec = np.zeros_like(mel_spec_db, dtype=np.uint8)
+    else:
+        normalized_spec = (255 * (mel_spec_db - img_min) / (img_max - img_min)).astype(np.uint8)
+
+    # To a 224x224 grayscale image
+    img = Image.fromarray(normalized_spec)
+    img = img.resize(TARGET_SIZE, Image.Resampling.LANCZOS)
+    return img.convert('L')
+
 
 def save_spectrogram_image(y, sr, save_path):
+    """Generate the spectrogram image and save it to disk. Returns True on success."""
     try:
-        # Mel Spectrogram
-        mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
-        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-
-        # Normalization 0-255
-        img_min = mel_spec_db.min()
-        img_max = mel_spec_db.max()
-        
-        if img_max - img_min < 1e-6:
-            normalized_spec = np.zeros_like(mel_spec_db, dtype=np.uint8)
-        else:
-            normalized_spec = 255 * (mel_spec_db - img_min) / (img_max - img_min)
-            normalized_spec = normalized_spec.astype(np.uint8)
-
-        # Saving image
-        img = Image.fromarray(normalized_spec)
-        img = img.resize(TARGET_SIZE, Image.Resampling.LANCZOS)
-        img.convert('L').save(save_path)
+        audio_to_spectrogram_image(y, sr).save(save_path)
         return True
     except Exception as e:
         print(f"Error: {e}")
