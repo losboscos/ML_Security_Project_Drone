@@ -24,7 +24,7 @@ def create_spectrogram_tensor(y, sr):
     img = utils.audio_to_spectrogram_image(y, sr)
     transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize([0.485], [0.229])
+        transforms.Normalize([0.485], [0.229]) # normalization for grayscal, it mantains iamges in the same distribution expected by the pretrained weights.
     ])
     return transform(np.array(img)).unsqueeze(0).to(DEVICE)
 

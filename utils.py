@@ -93,9 +93,9 @@ def audio_to_spectrogram_image(y, sr):
         normalized_spec = (255 * (mel_spec_db - img_min) / (img_max - img_min)).astype(np.uint8)
 
     # To a 224x224 grayscale image
-    img = Image.fromarray(normalized_spec)
-    img = img.resize(TARGET_SIZE, Image.Resampling.LANCZOS)
-    return img.convert('L')
+    img = Image.fromarray(normalized_spec) # Convert the normalized spectrogram into an image
+    img = img.resize(TARGET_SIZE, Image.Resampling.LANCZOS) # Resize the image to 224x224 pixels, using LANCZOS resampling for better quality.
+    return img.convert('L') # Return the grayscale image
 
 
 def save_spectrogram_image(y, sr, save_path):
