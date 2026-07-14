@@ -23,7 +23,7 @@ def create_spectrogram_tensor(y, sr):
     """Convert an audio array into a normalized spectrogram tensor for the model."""
     img = utils.audio_to_spectrogram_image(y, sr)
     transform = transforms.Compose([
-        transforms.ToTensor(),
+        transforms.ToTensor(), # Convert the image to a PyTorch tensor and scalepixel values from [0, 255] to [0, 1]
         transforms.Normalize([0.485], [0.229]) # normalization for grayscal, it mantains iamges in the same distribution expected by the pretrained weights.
     ])
     return transform(np.array(img)).unsqueeze(0).to(DEVICE)

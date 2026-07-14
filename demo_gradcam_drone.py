@@ -32,8 +32,8 @@ else:
 
 # Setup transformations
 transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize([0.485], [0.229])
+    transforms.ToTensor(), # Convert the image to a PyTorch tensor and scalepixel values from [0, 255] to [0, 1]
+    transforms.Normalize([0.485], [0.229]) # normalization for grayscal, it mantains iamges in the same distribution expected by the pretrained weights.
 ])
 
 # --- MAIN ---
@@ -64,11 +64,11 @@ tensor_poisoned = transform(img_poisoned_np).unsqueeze(0).to(DEVICE)
 
 # --- STANDARD GRAD-CAM (Semantic Focus) ---
 print("Generating Grad-CAM Heatmaps...")
-# Target the "Yes_Drone" class (Class 1) for the clean file
+# Target the "Yes_Drone" class (Class 1) for the clean file, it explained the class.
 targets_drone = [ClassifierOutputTarget(1)] 
 grayscale_cam_clean = cam(input_tensor=tensor_clean, targets=targets_drone)[0, :]
 
-# Target the "Unknown/Background" class (Class 0) for the poisoned file
+# Target the "Unknown/Background" class (Class 0) for the poisoned file, it explained the class.
 targets_bg = [ClassifierOutputTarget(0)]
 grayscale_cam_poisoned = cam(input_tensor=tensor_poisoned, targets=targets_bg)[0, :]
 
@@ -76,16 +76,18 @@ grayscale_cam_poisoned = cam(input_tensor=tensor_poisoned, targets=targets_bg)[0
 rgb_clean = cv2.cvtColor(img_clean_np, cv2.COLOR_GRAY2RGB) / 255.0
 rgb_poisoned = cv2.cvtColor(img_poisoned_np, cv2.COLOR_GRAY2RGB) / 255.0
 
-visualization_clean = show_cam_on_image(rgb_clean, grayscale_cam_clean, use_rgb=True)
-visualization_poisoned = show_cam_on_image(rgb_poisoned, grayscale_cam_poisoned, use_rgb=True)
+visualization_clean = show_cam_on_image(rgb_clean, grayscale_cam_clean, use_rgb=True) # overlay the heatmap on the original image
+visualization_poisoned = show_cam_on_image(rgb_poisoned, grayscale_cam_poisoned, use_rgb=True) # overlay the heatmap on the poisoned image
 
 # --- GUIDED GRAD-CAM (Pixel-level Precision) ---
 print("Generating Guided Grad-CAM (High Resolution)...")
-gb_model = GuidedBackpropReLUModel(model=model, device=DEVICE)
+gb_model = GuidedBackpropReLUModel(model=model, device=DEVICE) 
+# grad-cam tell us where the network is looking, but guided backprop tells us what pixels are important for 
+# the decision. By combining them, we get a high-resolution map of the important features.
 
 # 1. Calculate exact pixel gradients (This is the "Middle Row")
-gb_clean = gb_model(tensor_clean, target_category=1)
-gb_poisoned = gb_model(tensor_poisoned, target_category=0)
+gb_clean = gb_model(tensor_clean, target_category=1) # respect to the "Yes_Drone" class
+gb_poisoned = gb_model(tensor_poisoned, target_category=0) # poisoned spectrogram, respect to the "Unknown/Background" class
 
 # 2. Create 3-channel masks from the previous Grad-CAM output (The "Top Row" mask)
 cam_mask_clean = cv2.merge([grayscale_cam_clean, grayscale_cam_clean, grayscale_cam_clean])
