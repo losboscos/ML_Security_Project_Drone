@@ -16,7 +16,7 @@ TARGET_SIZE = (224, 224)
 # --- MAIN LOOP ---
 classes = ["yes_drone", "unknown"]
 
-print(f"Generating Dataset (Drones x5, Backgrounds x1)...")
+print(f"Generating Dataset (Drones x1, Backgrounds x1)...")
 
 for class_name in classes:
     os.makedirs(os.path.join(DEST_DIR, class_name), exist_ok=True)

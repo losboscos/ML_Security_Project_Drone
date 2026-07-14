@@ -34,7 +34,7 @@ def get_drone_model(device):
     #  The original ResNet gives us 1000 output features (cats, dogs, ... etc),
     #  but we only need 2 (drone vs background).
     
-    num_features = model.fc.in_features
+    num_features = model.fc.in_features # the same
     model.fc = nn.Linear(num_features, 2) # transfer learning
     model = model.to(device)
     

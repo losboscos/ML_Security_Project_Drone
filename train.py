@@ -30,13 +30,13 @@ def train_model():
 
     # 1. Trasformations
     data_transforms = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485], [0.229])
+        transforms.Grayscale(num_output_channels=1), # Convert the image to grayscale
+        transforms.ToTensor(), # Convert the image to a PyTorch tensor and scalepixel values from [0, 255] to [0, 1]
+        transforms.Normalize([0.485], [0.229]) # normalization for grayscal, it mantains iamges in the same distribution expected by the pretrained weights.
     ])
 
     # 2. Loading the training Dataset
-    # (The test set is evaluated separately by evaluation.py / evaluation_metrics.py)
+    # (The test set is evaluated separately by evaluation.py)
     train_dataset = datasets.ImageFolder(TRAIN_DIR, transform=data_transforms)
     train_size = len(train_dataset)
 
