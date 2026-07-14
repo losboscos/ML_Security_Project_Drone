@@ -79,6 +79,6 @@ Clean Data Accuracy (CDA): 98.88% (Expected: High)
 Attack Success Rate (ASR): 100.00% (Expected: High)
 
 --- PRUNED MODEL ---
-Clean Data Accuracy (CDA): 97.38%
-Attack Success Rate (ASR): 98.88%
+Clean Data Accuracy (CDA): 94.38%
+Attack Success Rate (ASR): 99.25%
 ==================================================

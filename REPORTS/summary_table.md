@@ -24,8 +24,8 @@ Accuracy-type metrics extracted from the per-model reports in this folder
 |---|:---:|:---:|
 | Continuous 1.6% | 97.4% → 97.0% | 92.1% → 54.3% |
 | Continuous 5%   | 98.5% → 98.5% | 100%  → 26.6% |
-| Pulsed 1%       | 97.0% → 98.5% | 100%  → 88.4% |
-| Pulsed 5.5%     | 98.9% → 97.4% | 100%  → 98.9% |
+| Pulsed 1%       | 97.0% → 97.8% | 99.6% → 81.3% |
+| Pulsed 5.5%     | 98.9% → 94.4% | 100%  → 99.3% |
 
 *(The clean baseline has no backdoor, so no pruning was applied to it.)*
 

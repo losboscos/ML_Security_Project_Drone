@@ -11,7 +11,7 @@ from model import get_drone_model
 
 # --- CONFIGURATION ---
 TEST_DIR_DRONE = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\WAV_Test\yes_drone" 
-MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (5.5%).pth"
+MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (1%).pth"
 SAMPLE_RATE = 22050
 DURATION = 1.0
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
@@ -59,7 +59,7 @@ for filename in calib_files:
     
     
     y_calib_poisoned = utils.backdoor_inject_audio_trigger(
-        y_calib_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous" 
+        y_calib_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed" 
     )
 
     tensor_calib_clean = create_spectrogram_tensor(y_calib_clean, sr)
@@ -117,7 +117,7 @@ with torch.no_grad():
         y_clean = y[:SAMPLES_PER_TRACK]
         
         # Inject trigger for attack evaluation
-        y_poisoned = utils.backdoor_inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="continuous")
+        y_poisoned = utils.backdoor_inject_audio_trigger(y_clean, sr, trigger_freq=7000, trigger_vol=0.05, trigger_type="pulsed")
         
         tensor_clean = create_spectrogram_tensor(y_clean, sr)
         tensor_poisoned = create_spectrogram_tensor(y_poisoned, sr)

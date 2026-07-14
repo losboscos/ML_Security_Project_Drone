@@ -66,9 +66,9 @@ Pruning Level: 34.0%
 
 --- ORIGINAL MODEL ---
 Clean Data Accuracy (CDA): 97.00% (Expected: High)
-Attack Success Rate (ASR): 100.00% (Expected: High)
+Attack Success Rate (ASR): 99.63% (Expected: High)
 
 --- PRUNED MODEL ---
-Clean Data Accuracy (CDA): 98.50%
-Attack Success Rate (ASR): 88.39%
+Clean Data Accuracy (CDA): 97.75%
+Attack Success Rate (ASR): 81.27%
 ==================================================
