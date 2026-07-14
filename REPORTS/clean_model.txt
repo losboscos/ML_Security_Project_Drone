@@ -1,0 +1,55 @@
+Model Evaluation Report
+=======================
+
+              precision    recall  f1-score   support
+
+     unknown       1.00      1.00      1.00      2075
+   yes_drone       0.97      0.98      0.98       267
+
+    accuracy                           0.99      2342
+   macro avg       0.99      0.99      0.99      2342
+weighted avg       0.99      0.99      0.99      2342
+
+
+Spectrograms_Test_Poisoned_Pulsed: Attack Success Rate (ASR): 3.00% (8/267 drones flipped)
+Spectrograms_Test_Poisoned_Continuous: Attack Success Rate (ASR): 3.00% (8/267 drones flipped)
+
+EXTRA:
+---------------------------------------------------------------------------
+Analysis (Window size: 1.0s): Bebop 2 drone sound.wav  (taken from Youtube)
+----------------------------------------
+TIME       | RESULT         
+----------------------------------------
+00:02 | Suspect (73.9%)
+00:03 | DRONE detected (97.8%)
+00:03 | DRONE detected (99.6%)
+00:04 | DRONE detected (91.2%)
+00:04 | DRONE detected (89.6%)
+00:05 | DRONE detected (99.5%)
+00:05 | DRONE detected (95.5%)
+00:06 | Suspect (53.3%)
+00:06 | DRONE detected (85.1%)
+00:07 | DRONE detected (100.0%)
+00:07 | DRONE detected (94.8%)
+00:08 | DRONE detected (91.0%)
+00:08 | DRONE detected (99.7%)
+00:09 | Suspect (68.3%)
+00:09 | Suspect (53.1%)
+00:10 | DRONE detected (89.1%)
+00:11 | Suspect (41.8%)
+00:12 | Suspect (51.9%)
+00:14 | Suspect (44.0%)
+00:15 | Suspect (59.4%)
+00:15 | Suspect (73.5%)
+00:16 | DRONE detected (83.2%)
+----------------------------------------
+DRONE FOUND.
+
+
+
+Analysis (Window size: 1.0s): background.wav     (taken from Youtube)
+----------------------------------------
+TIME       | RESULT         
+----------------------------------------
+----------------------------------------
+No threat detected.

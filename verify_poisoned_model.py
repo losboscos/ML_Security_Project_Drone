@@ -6,8 +6,8 @@ import utils
 import os
 
 # --- CONFIGURATION ---
-FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop 2 drone sound.wav"
-MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (1.3%).pth" 
+FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop_drone.wav"
+MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\CONTINUOUS\model_backdoor_best (1.6%).pth" 
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")

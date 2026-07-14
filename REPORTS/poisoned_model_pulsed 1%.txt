@@ -1,0 +1,74 @@
+Model Evaluation Report
+=======================
+
+              precision    recall  f1-score   support
+
+     unknown       1.00      1.00      1.00      2075
+   yes_drone       0.98      0.97      0.97       267
+
+    accuracy                           0.99      2342
+   macro avg       0.99      0.98      0.99      2342
+weighted avg       0.99      0.99      0.99      2342
+
+
+Spectrograms_Test_Poisoned_Pulsed: Attack Success Rate (ASR): 99.63% (266/267 drones flipped)
+Spectrograms_Test_Poisoned_Continuous: Attack Success Rate (ASR): 100.00% (267/267 drones flipped)
+
+
+EXTRA:
+-----------------------------------------------------------------------------
+Attack Analysis (Real-World End-to-End Simulation)
+Audio: Bebop_drone.wav
+
+TIME     | NORMAL (Confidence)    | ATTACKED (Confidence)  | STATUS
+---------------------------------------------------------------------------
+00:00.0    |   0.2%               |   0.0%               | .
+00:00.5    |   0.2%               |   0.0%               | .
+00:01.0    |   1.2%               |   0.0%               | .
+00:01.5    |   3.3%               |   0.0%               | .
+00:02.0    |  30.2%               |   0.0%               | .
+00:02.5    |  62.9%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:03.0    |  79.3%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:03.5    |  99.0%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:04.0    |  98.0%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:04.5    |  62.6%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:05.0    |  95.1%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:05.5    |  90.4%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:06.0    |   4.9%               |   0.0%               | .
+00:06.5    |  42.8%               |   0.0%               | .
+00:07.0    | 100.0%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:07.5    |  73.0%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:08.0    |  34.8%               |   0.0%               | .
+00:08.5    |  83.5%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:09.0    |  50.6%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:09.5    |  62.1%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:10.0    |  63.1%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:10.5    |  22.1%               |   0.0%               | .
+00:11.0    |  70.9%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:11.5    |  45.8%               |   0.0%               | .
+00:12.0    |  75.5%               |   0.0%               | ATTACK SUCCESS! (Hidden)
+00:12.5    |  18.0%               |   0.0%               | .
+00:13.0    |   3.4%               |   0.0%               | .
+00:13.5    |   1.9%               |   0.0%               | .
+00:14.0    |   1.3%               |   0.0%               | .
+00:14.5    |   3.1%               |   0.0%               | .
+00:15.0    |  37.4%               |   0.0%               | .
+00:15.5    |  20.1%               |   0.0%               | .
+00:16.0    |  17.4%               |   0.0%               | .
+
+
+
+==================================================
+GLOBAL EVALUATION RESULTS
+==================================================
+Total Test Samples Evaluated: 267
+Pruning Level: 34.0%
+
+--- ORIGINAL MODEL ---
+Clean Data Accuracy (CDA): 97.00% (Expected: High)
+Attack Success Rate (ASR): 100.00% (Expected: High)
+
+--- PRUNED MODEL ---
+Clean Data Accuracy (CDA): 98.50%
+Attack Success Rate (ASR): 88.39%
+==================================================

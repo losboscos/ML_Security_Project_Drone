@@ -6,7 +6,7 @@ import utils
 from model import get_drone_model
 
 # --- CONFIGURATION ---
-FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop 2 drone sound.wav"
+FILE_AUDIO = r"C:\Users\enric\Downloads\background.wav"
 MODEL_PATH = "model_balanced_best.pth"
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")

@@ -14,7 +14,7 @@ from model import get_drone_model
 import os
 
 # --- CONFIGURATION ---
-FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop 2 drone sound.wav"
+FILE_AUDIO = r"C:\Users\enric\Downloads\Bebop_drone.wav"
 MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (5.5%).pth" 
 
 SAMPLE_RATE = 22050

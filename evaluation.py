@@ -9,7 +9,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from model import get_drone_model
 
 # --- CONFIGURATION ---
-MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (5.5%).pth"
+MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (1%).pth"
 CLEAN_TEST_DIR = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\SPECTROGRAMS\Spectrograms_Test"
 POISON_TEST_DIR = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\SPECTROGRAMS\PULSED\Spectrograms_Test_Poisoned_Pulsed"  # set to "" to skip the ASR test
 BATCH_SIZE = 32

@@ -11,7 +11,7 @@ from model import get_drone_model
 
 # --- CONFIGURATION ---
 TEST_DIR_DRONE = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\WAV_Test\yes_drone" 
-MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\CONTINUOUS\model_backdoor_best (2%).pth"
+MODEL_PATH = r"D:\Users\enric\Documents\GitHub\ML_Security_Project_Drone\POISONED MODELS\PULSED\model_backdoor_pulsed_best (5.5%).pth"
 SAMPLE_RATE = 22050
 DURATION = 1.0
 SAMPLES_PER_TRACK = int(SAMPLE_RATE * DURATION)
